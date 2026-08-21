@@ -89,13 +89,13 @@ export function CustomCursor() {
       <div
         ref={dotRef}
         aria-hidden="true"
-        className="fx-layer pointer-events-none fixed left-0 top-0 z-[100] hidden size-2 rounded-full bg-teal-600 md:block"
+        className="fx-layer pointer-events-none fixed left-0 top-0 z-[100] hidden size-2 rounded-full bg-indigo-400 md:block"
         style={{ opacity: 0 }}
       />
       <div
         ref={ringRef}
         aria-hidden="true"
-        className="fx-layer pointer-events-none fixed left-0 top-0 z-[100] hidden size-9 rounded-full border-[1.5px] border-teal-600/45 bg-teal-400/8 backdrop-blur-[2px] md:block"
+        className="fx-layer pointer-events-none fixed left-0 top-0 z-[100] hidden size-9 rounded-full border-[1.5px] border-indigo-400/45 bg-indigo-400/8 backdrop-blur-[2px] md:block"
         style={{ opacity: 0 }}
       />
     </>

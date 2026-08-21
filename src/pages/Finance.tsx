@@ -48,7 +48,7 @@ function MetricRow({ label, before, after, format, invert = false }: {
   const diff = after - before;
   const good = invert ? diff < 0 : diff > 0;
   return (
-    <div className="flex items-center justify-between rounded-xl bg-white/55 px-4 py-3">
+    <div className="flex items-center justify-between rounded-xl bg-foreground/5 px-4 py-3">
       <span className="text-sm font-medium">{label}</span>
       <div className="flex items-center gap-2.5 tabular">
         {diff !== 0 && (
@@ -81,10 +81,10 @@ function BreakEvenTimeline({ before, after }: { before: number; after: number })
   const pos = (m: number) => `${Math.min(Math.max((Number.isFinite(m) ? m : scale) / scale, 0), 1) * 100}%`;
   const faster = after < before;
   return (
-    <div className="rounded-xl bg-white/55 p-4">
+    <div className="rounded-xl bg-foreground/5 p-4">
       <div className="flex items-center justify-between text-xs font-semibold tracking-wide text-muted-foreground uppercase">
         <span>Payback timeline</span>
-        <span className={cn("tabular", Number.isFinite(after) && "text-teal-700")}>
+        <span className={cn("tabular", Number.isFinite(after) && "text-indigo-300")}>
           {Number.isFinite(after) ? `Break-even at month ${after}` : "Not within 15 months"}
         </span>
       </div>
@@ -92,7 +92,7 @@ function BreakEvenTimeline({ before, after }: { before: number; after: number })
         {/* Track */}
         <div className="absolute inset-x-0 top-4 h-2.5 overflow-hidden rounded-full bg-foreground/8">
           <motion.div
-            className="h-full rounded-full bg-gradient-to-r from-sky-500/70 to-teal-500"
+            className="h-full rounded-full bg-gradient-to-r from-indigo-500/70 to-violet-500"
             animate={{ width: pos(after) }}
             transition={{ type: "spring", stiffness: 120, damping: 20 }}
           />
@@ -114,7 +114,7 @@ function BreakEvenTimeline({ before, after }: { before: number; after: number })
           animate={{ left: pos(after) }}
           transition={{ type: "spring", stiffness: 120, damping: 20 }}
         >
-          <div className="size-5 rounded-full border-[3px] border-white bg-teal-600 shadow-md" />
+          <div className="size-5 rounded-full border-[3px] border-white bg-indigo-500 shadow-md" />
         </motion.div>
         {/* Month ticks */}
         <div className="absolute inset-x-0 bottom-0 flex justify-between text-[9px] text-muted-foreground/70 tabular">
@@ -309,12 +309,12 @@ export default function Finance() {
 
             {/* AI insight */}
             <motion.div key={aiInsight} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-              <GlassCard className="flex gap-3 p-5 ring-1 ring-teal-600/15">
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-teal-500 to-sky-600 text-white">
+              <GlassCard className="flex gap-3 p-5 ring-1 ring-indigo-500/15">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white">
                   <Info className="size-4" />
                 </span>
                 <div>
-                  <p className="text-xs font-bold tracking-widest text-teal-700 uppercase">Copilot insight · AI ESTIMATE</p>
+                  <p className="text-xs font-bold tracking-widest text-indigo-300 uppercase">Copilot insight · AI ESTIMATE</p>
                   <p className="mt-1 text-sm leading-relaxed">{aiInsight}</p>
                 </div>
               </GlassCard>
@@ -343,7 +343,7 @@ export default function Finance() {
           </div>
           <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             {scenarioData.map((s) => (
-              <div key={s.key} className="rounded-xl bg-white/55 p-3 text-sm">
+              <div key={s.key} className="rounded-xl bg-foreground/5 p-3 text-sm">
                 <p className="font-semibold">{s.name}</p>
                 <p className="text-muted-foreground">Break-even: {s.BreakEven === 0 ? "not reached" : `${s.BreakEven} mo`}</p>
                 <p className="text-[11px] text-muted-foreground/80">{SCENARIOS[s.key].note}</p>
@@ -398,7 +398,7 @@ export default function Finance() {
         </div>
 
         <GlassCard className="flex gap-3 p-4">
-          <Calculator className="size-5 shrink-0 text-sky-600" />
+          <Calculator className="size-5 shrink-0 text-violet-400" />
           <p className="text-xs leading-relaxed text-muted-foreground">
             <strong>How these numbers are made:</strong> EMI uses the reducing-balance formula P·r·(1+r)ⁿ/((1+r)ⁿ−1).
             Break-even units = fixed costs ÷ contribution per unit. ROI = annual profit ÷ invested capital.

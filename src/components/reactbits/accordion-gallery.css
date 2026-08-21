@@ -1,7 +1,7 @@
 .accordion-gallery {
-  --ag-accent: #0d9488;
+  --ag-accent: #818cf8;
   --ag-overlay: #0f172a;
-  --ag-text: #ffffff;
+  --ag-text: #e0e7ff;
   --ag-gap: 10px;
   --ag-radius: 16px;
   --ag-media-size: 320px;
@@ -32,10 +32,10 @@
   outline: none;
   transform-style: preserve-3d;
   transform-origin: center center;
-  background: #e2e8f0;
+  background: #1e1b4b;
   box-shadow:
-    0 10px 30px -18px rgba(15, 40, 70, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    0 10px 30px -18px rgba(0, 0, 0, 0.7),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
   will-change: flex-grow, transform;
   -webkit-tap-highlight-color: transparent;
 }
@@ -43,7 +43,7 @@
 .ag-panel:focus-visible {
   box-shadow:
     0 0 0 2px var(--ag-accent),
-    0 10px 30px -18px rgba(15, 40, 70, 0.5);
+    0 10px 30px -18px rgba(0, 0, 0, 0.7);
 }
 
 .ag-panel__frame {

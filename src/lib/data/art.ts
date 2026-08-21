@@ -20,8 +20,8 @@ export interface ArtOpts {
 export function artTile({
   w = 800,
   h = 1000,
-  from = "#0ea5e9",
-  to = "#115e59",
+  from = "#6366f1",
+  to = "#1e1b4b",
   glyph = "✦",
   label = "",
   sub = "",
@@ -51,8 +51,8 @@ export function artAvatar(initials: string): string {
   return artTile({
     w: 400,
     h: 400,
-    from: "#0d9488",
-    to: "#0369a1",
+    from: "#6366f1",
+    to: "#1e1b4b",
     glyph: initials,
     label: "",
   });

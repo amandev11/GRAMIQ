@@ -111,7 +111,7 @@ export default function Schemes() {
                 </div>
 
                 <button
-                  className="mt-4 flex items-center justify-center gap-1.5 rounded-xl bg-white/55 py-2 text-xs font-semibold text-teal-700 transition-colors hover:bg-white/80"
+                  className="mt-4 flex items-center justify-center gap-1.5 rounded-xl bg-foreground/5 py-2 text-xs font-semibold text-indigo-300 transition-colors hover:bg-foreground/10"
                   onClick={() => setExpanded(expanded === m.scheme.id ? null : m.scheme.id)}
                   aria-expanded={expanded === m.scheme.id}
                 >
@@ -127,7 +127,7 @@ export default function Schemes() {
                       exit={{ opacity: 0, height: 0 }}
                       className="overflow-hidden"
                     >
-                      <div className="mt-3 space-y-3 rounded-xl bg-white/60 p-4 text-sm">
+                      <div className="mt-3 space-y-3 rounded-xl bg-foreground/6 p-4 text-sm">
                         {m.missingRequirements.length > 0 && (
                           <p><span className="font-semibold text-amber-700">Missing:</span> {m.missingRequirements.join("; ")}</p>
                         )}

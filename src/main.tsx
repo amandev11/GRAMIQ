@@ -34,7 +34,10 @@ const Trust = lazy(() => import("./pages/Trust.tsx"));
 function RouteLoading() {
   return (
     <div className="min-h-screen flex items-center justify-center">
-      <div className="animate-pulse text-muted-foreground">Loading...</div>
+      <div className="flex items-center gap-3">
+        <span className="size-6 animate-spin rounded-full border-2 border-indigo-500/30 border-t-indigo-400" />
+        <span className="text-sm text-muted-foreground">Loading…</span>
+      </div>
     </div>
   );
 }

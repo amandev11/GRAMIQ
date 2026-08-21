@@ -47,9 +47,9 @@ export function AnimatedNumber({
 
 /** Provenance badge — VERIFIED SOURCE / AI ESTIMATE / DEMO DATA */
 const sourceStyles: Record<string, string> = {
-  "VERIFIED SOURCE": "bg-emerald-500/12 text-emerald-700 border-emerald-600/25",
-  "AI ESTIMATE": "bg-sky-500/12 text-sky-700 border-sky-600/25",
-  "DEMO DATA": "bg-amber-500/14 text-amber-700 border-amber-600/30",
+  "VERIFIED SOURCE": "bg-emerald-500/12 text-emerald-300 border-emerald-500/25",
+  "AI ESTIMATE": "bg-indigo-500/14 text-indigo-300 border-indigo-500/25",
+  "DEMO DATA": "bg-amber-500/14 text-amber-300 border-amber-500/30",
 };
 
 export function DataBadge({ source, className }: { source: string; className?: string }) {
@@ -121,11 +121,11 @@ export function ScoreRing({
 }) {
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
-  const color = score >= 75 ? "#0d9488" : score >= 55 ? "#d97706" : "#e11d48";
+  const color = score >= 75 ? "oklch(0.68 0.15 155)" : score >= 55 ? "oklch(0.74 0.15 75)" : "oklch(0.62 0.21 18)";
   return (
     <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="oklch(0.6 0.03 220 / 12%)" strokeWidth={stroke} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="oklch(0.6 0.015 255 / 14%)" strokeWidth={stroke} />
         <motion.circle
           cx={size / 2}
           cy={size / 2}

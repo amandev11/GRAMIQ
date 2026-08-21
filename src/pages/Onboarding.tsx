@@ -151,10 +151,10 @@ export default function Onboarding() {
               "relative flex size-16 shrink-0 items-center justify-center rounded-full text-white shadow-lg transition-transform active:scale-95",
               listening
                 ? "bg-gradient-to-br from-rose-500 to-red-600"
-                : "bg-gradient-to-br from-teal-500 to-sky-600",
+                : "bg-gradient-to-br from-indigo-500 to-violet-600",
             )}
           >
-            {listening && <span className="absolute inset-0 animate-ping rounded-full bg-teal-400/50" />}
+            {listening && <span className="absolute inset-0 animate-ping rounded-full bg-indigo-400/50" />}
             {listening ? <MicOff className="relative size-6" /> : <Mic className="relative size-6" />}
           </button>
           <p className="text-sm text-muted-foreground">
@@ -213,18 +213,18 @@ export default function Onboarding() {
     // Step 3: language + generate
     <div key="s3" className="space-y-5">
       <h2 className="font-display text-2xl font-bold sm:text-3xl">How should GRAMIQ talk to you?</h2>
-      <GlassCard className="flex flex-col items-center bg-white/50 p-4">
+      <GlassCard className="flex flex-col items-center bg-foreground/4 p-4">
         <OptionWheel
           items={["हिन्दी · Hindi", "English", "Hinglish"]}
           defaultSelected={language === "en" ? 1 : language === "hinglish" ? 2 : 0}
           onChange={(i) => setLanguage(((["hi", "en", "hinglish"] as const)[i]) ?? "hi")}
           textColor="#94a3b8"
-          activeColor="#0d9488"
+          activeColor="#818cf8"
           fontSize={1.35}
         />
         <p className="mt-1 text-xs text-muted-foreground">Scroll or drag to choose your language</p>
       </GlassCard>
-      <GlassCard className="flex items-start gap-3 bg-white/50 p-4">
+      <GlassCard className="flex items-start gap-3 bg-foreground/4 p-4">
         <Lightbulb className="mt-0.5 size-5 shrink-0 text-amber-500" />
         <p className="text-sm leading-relaxed text-muted-foreground">
           Regional-language responses and external STT/TTS services plug into the same voice pipeline.
@@ -239,7 +239,7 @@ export default function Onboarding() {
       <header className="px-4 pt-6 sm:px-8">
         <div className="mx-auto flex max-w-3xl items-center justify-between">
           <button className="flex items-center gap-2" onClick={() => navigate("/")}>
-            <span className="flex size-8 items-center justify-center rounded-xl bg-gradient-to-br from-teal-500 to-sky-600 text-white shadow-md">
+            <span className="flex size-8 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-md shadow-indigo-500/30">
               <Sparkles className="size-4" />
             </span>
             <span className="font-display text-lg font-bold tracking-tight">GRAMIQ</span>
@@ -263,7 +263,7 @@ export default function Onboarding() {
               key={i}
               className={cn(
                 "h-1.5 flex-1 rounded-full transition-colors duration-300",
-                i <= step ? "bg-gradient-to-r from-teal-500 to-sky-500" : "bg-foreground/10",
+                i <= step ? "bg-gradient-to-r from-indigo-500 to-violet-500" : "bg-foreground/10",
               )}
             />
           ))}
@@ -285,7 +285,7 @@ export default function Onboarding() {
                 <motion.div
                   animate={{ rotate: 360 }}
                   transition={{ repeat: Infinity, duration: 1.6, ease: "linear" }}
-                  className="flex size-16 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-500 to-sky-600 text-white shadow-lg"
+                  className="flex size-16 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/25"
                 >
                   <Sparkles className="size-7" />
                 </motion.div>
@@ -298,19 +298,15 @@ export default function Onboarding() {
               {genSteps.map((s, i) => {
                 const active = genPhase >= i;
                 const done = genPhase > i;
-                return (
-                  <li
-                    key={s.label}
-                    className={cn(
-                      "rounded-xl px-4 py-3 transition-all duration-500",
-                      active ? "bg-white/70 ring-1 ring-teal-600/20" : "bg-foreground/4 opacity-40",
-                    )}
+                return (                    <li
+                    key={s.label}              className={cn("rounded-xl px-4 py-3 transition-all duration-500",
+                      active ? "bg-foreground/8 ring-1 ring-indigo-500/25" : "bg-foreground/4 opacity-40")}
                   >
                     <p className="flex items-center gap-2 text-sm font-semibold">
                       {done ? (
-                        <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
+                        <CheckCircle2 className="size-4 shrink-0 text-emerald-400" />
                       ) : (
-                        <span className="size-4 shrink-0 animate-pulse rounded-full border-2 border-teal-600 border-t-transparent" style={{ animationDuration: "0.9s" }} />
+                        <span className="size-4 shrink-0 animate-pulse rounded-full border-2 border-indigo-400 border-t-transparent" style={{ animationDuration: "0.9s" }} />
                       )}
                       {s.label}
                     </p>

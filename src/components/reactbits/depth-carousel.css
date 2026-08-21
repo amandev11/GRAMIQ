@@ -20,7 +20,7 @@
 }
 
 .depth-carousel:focus-visible {
-  outline: 2px solid oklch(0.62 0.09 205 / 60%);
+  outline: 2px solid oklch(0.60 0.14 258 / 50%);
   outline-offset: 4px;
   border-radius: 12px;
 }
@@ -37,14 +37,14 @@
   left: 50%;
   transform-origin: center center;
   overflow: hidden;
-  background: #f1f5f9;
+  background: #1e1b4b;
   box-shadow:
-    0 30px 60px -20px rgba(15, 40, 70, 0.35),
-    0 8px 20px -10px rgba(15, 40, 70, 0.25);
+    0 30px 60px -20px rgba(0, 0, 0, 0.65),
+    0 8px 20px -10px rgba(0, 0, 0, 0.45);
   will-change: transform, opacity, filter;
   cursor: pointer;
   transform: translate(-50%, -50%);
-  border: 1px solid rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .depth-carousel__img {
@@ -74,11 +74,11 @@
   height: 42px;
   display: grid;
   place-items: center;
-  border: 1px solid rgba(13, 148, 136, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.75);
+  background: rgba(30, 27, 75, 0.75);
   backdrop-filter: blur(8px);
-  color: #0f766e;
+  color: #a5b4fc;
   cursor: pointer;
   transition:
     background 0.2s ease,
@@ -87,8 +87,8 @@
 }
 
 .depth-carousel__arrow:hover {
-  background: rgba(255, 255, 255, 0.95);
-  border-color: rgba(13, 148, 136, 0.5);
+  background: rgba(49, 46, 129, 0.95);
+  border-color: rgba(129, 140, 248, 0.5);
 }
 
 .depth-carousel__arrow:active {
@@ -113,9 +113,9 @@
   gap: 8px;
   padding: 8px 12px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.65);
+  background: rgba(30, 27, 75, 0.65);
   backdrop-filter: blur(6px);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .depth-carousel__dot {
@@ -124,7 +124,7 @@
   padding: 0;
   border: none;
   border-radius: 999px;
-  background: rgba(15, 60, 80, 0.28);
+  background: rgba(129, 140, 248, 0.28);
   cursor: pointer;
   transition:
     width 0.25s ease,
@@ -133,7 +133,7 @@
 
 .depth-carousel__dot.is-active {
   width: 20px;
-  background: #0d9488;
+  background: #818cf8;
 }
 
 @media (prefers-reduced-motion: reduce) {

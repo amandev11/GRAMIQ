@@ -47,9 +47,9 @@ function JourneyRail() {
               onClick={() => navigate(STAGES[i].paths[0])}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold tracking-wider transition-all",
+                "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold tracking-wider transition-all duration-200",
                 active
-                  ? "bg-gradient-to-r from-teal-600 to-sky-600 text-white shadow-md"
+                  ? "bg-gradient-to-r from-indigo-500 to-violet-600 text-white shadow-md shadow-indigo-500/30"
                   : "text-muted-foreground hover:bg-foreground/5 hover:text-foreground",
               )}
             >
@@ -59,8 +59,8 @@ function JourneyRail() {
             {i < STAGES.length - 1 && (
               <span
                 className={cn(
-                  "mx-0.5 h-px w-4 transition-colors sm:w-6",
-                  i < activeIdx ? "bg-teal-500/70" : "bg-border",
+                  "mx-0.5 h-px w-4 transition-colors duration-300 sm:w-6",
+                  i < activeIdx ? "bg-indigo-500/70" : "bg-border",
                 )}
               />
             )}
@@ -90,9 +90,9 @@ export function AppShell({ children, title }: { children: ReactNode; title?: str
           onClick={() => setMobileOpen(false)}
           className={({ isActive }) =>
             cn(
-              "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+              "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors duration-200",
               isActive
-                ? "bg-primary/12 text-primary shadow-[inset_0_1px_0_oklch(1_0_0/60%)]"
+                ? "bg-indigo-500/12 text-indigo-300 shadow-[inset_0_1px_0_oklch(1_0_0/8%)]"
                 : "text-foreground/70 hover:bg-foreground/5 hover:text-foreground",
             )
           }
@@ -119,7 +119,7 @@ export function AppShell({ children, title }: { children: ReactNode; title?: str
             <Menu className="size-5" />
           </Button>
           <button className="flex items-center gap-2" onClick={() => navigate("/dashboard")} aria-label="GRAMIQ home">
-            <span className="flex size-8 items-center justify-center rounded-xl bg-gradient-to-br from-teal-500 to-sky-600 text-white shadow-md">
+            <span className="flex size-8 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-md shadow-indigo-500/30">
               <Sparkles className="size-4" />
             </span>
             <span className="font-display text-lg font-bold tracking-tight">GRAMIQ</span>
@@ -128,13 +128,13 @@ export function AppShell({ children, title }: { children: ReactNode; title?: str
         </div>
         <div className="flex items-center gap-2">
           {isDemo && (
-            <span className="hidden rounded-full border border-amber-500/40 bg-amber-400/15 px-2.5 py-1 text-[10px] font-bold tracking-widest text-amber-700 uppercase sm:inline-flex">
+            <span className="hidden rounded-full border border-amber-500/40 bg-amber-400/15 px-2.5 py-1 text-[10px] font-bold tracking-widest text-amber-300 uppercase sm:inline-flex">
               Demo Mode
             </span>
           )}
           <Button
             size="sm"
-            className="gap-2 rounded-full"
+            className="gap-2 rounded-full bg-gradient-to-r from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/20 transition-all hover:brightness-110"
             onClick={() => setCopilotOpen(true)}
           >
             <Bot className="size-4" />
@@ -160,21 +160,21 @@ export function AppShell({ children, title }: { children: ReactNode; title?: str
           <div className="mt-4 border-t border-border/60 pt-3">
             <NavLink
               to="/judges"
-              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-foreground/70 transition-colors hover:bg-foreground/5 hover:text-foreground"
+              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-foreground/70 transition-colors duration-200 hover:bg-foreground/5 hover:text-foreground"
             >
               <Ribbon className="size-4" />
               Judges Mode
             </NavLink>
             <NavLink
               to="/admin"
-              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-foreground/70 transition-colors hover:bg-foreground/5 hover:text-foreground"
+              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-foreground/70 transition-colors duration-200 hover:bg-foreground/5 hover:text-foreground"
             >
               <FileText className="size-4" />
               Knowledge Admin
             </NavLink>
             <NavLink
               to="/trust"
-              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-emerald-800/70 transition-colors hover:bg-emerald-600/8 hover:text-emerald-800"
+              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-emerald-300/70 transition-colors duration-200 hover:bg-emerald-500/8 hover:text-emerald-300"
             >
               <ShieldCheck className="size-4" />
               Trust Center
@@ -206,7 +206,7 @@ export function AppShell({ children, title }: { children: ReactNode; title?: str
 
       {/* Floating copilot button (mobile) */}
       <button
-        className="glass-strong fixed right-4 bottom-4 z-40 flex size-14 items-center justify-center rounded-full text-primary shadow-xl lg:hidden"
+        className="glass-strong fixed right-4 bottom-4 z-40 flex size-14 items-center justify-center rounded-full text-indigo-300 shadow-xl lg:hidden"
         onClick={() => setCopilotOpen(true)}
         aria-label="Open AI copilot"
       >

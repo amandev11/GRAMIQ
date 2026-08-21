@@ -79,7 +79,7 @@ export default function Risks() {
                     <dd className="text-muted-foreground">{r.impact}</dd>
                   </div>
                   <div>
-                    <dt className="text-xs font-bold tracking-wide text-teal-700 uppercase">Mitigation</dt>
+                    <dt className="text-xs font-bold tracking-wide text-indigo-300 uppercase">Mitigation</dt>
                     <dd className="text-muted-foreground">{r.mitigation}</dd>
                   </div>
                 </dl>

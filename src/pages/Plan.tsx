@@ -33,7 +33,7 @@ export default function Plan() {
 
         {/* Overall progress */}
         <GlassCard className="flex items-center gap-4 p-5">
-          <CircleCheckBig className="size-8 text-teal-600" />
+          <CircleCheckBig className="size-8 text-indigo-400" />
           <div className="flex-1">
             <div className="flex justify-between text-sm font-medium">
               <span>Total progress</span>
@@ -41,7 +41,7 @@ export default function Plan() {
             </div>
             <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-foreground/8">
               <motion.div
-                className="h-full rounded-full bg-gradient-to-r from-teal-500 to-sky-500"
+                className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-violet-500"
                 initial={{ width: 0 }}
                 animate={{ width: `${(totalDone / actionItems.length) * 100}%` }}
                 transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
@@ -85,7 +85,7 @@ export default function Plan() {
                 <button
                   className={cn(
                     "flex w-full items-center gap-3 rounded-xl px-4 py-3.5 text-left text-sm transition-colors",
-                    item.done ? "bg-emerald-500/8 text-muted-foreground" : "bg-white/55 hover:bg-white/80",
+                    item.done ? "bg-emerald-500/8 text-muted-foreground" : "bg-foreground/5 hover:bg-foreground/10",
                   )}
                   onClick={() => toggleActionItem(item.id)}
                   aria-pressed={item.done}

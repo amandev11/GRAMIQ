@@ -63,11 +63,11 @@
   border-radius: var(--card-radius);
   position: relative;
   background-blend-mode: color-dodge, normal, normal, normal;
-  box-shadow: rgba(15, 40, 70, 0.5) calc((var(--pointer-from-left) * 10px) - 3px)
+  box-shadow: rgba(0, 0, 0, 0.6) calc((var(--pointer-from-left) * 10px) - 3px)
     calc((var(--pointer-from-top) * 20px) - 6px) 20px -5px;
   transition: transform 1s ease;
   transform: translateZ(0) rotateX(0deg) rotateY(0deg);
-  background: rgba(6, 26, 34, 0.92);
+  background: rgba(30, 27, 75, 0.92);
   backface-visibility: hidden;
   overflow: hidden;
 }

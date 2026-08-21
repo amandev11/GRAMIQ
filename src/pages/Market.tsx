@@ -43,7 +43,7 @@ export default function Market() {
               <h3 className="font-display text-lg font-bold">Your business map</h3>
               <DataBadge source="DEMO DATA" />
             </div>
-            <div className="relative mt-4 aspect-[4/3] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-sky-100/70 via-teal-50/60 to-emerald-50/50 ring-1 ring-foreground/8">
+            <div className="relative mt-4 aspect-[4/3] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-950/70 via-violet-950/60 to-slate-950/50 ring-1 ring-foreground/8">
               <svg className="absolute inset-0 h-full w-full" aria-hidden>
                 <path d="M 0 55 Q 30 45 55 52 T 100 48" fill="none" stroke="oklch(0.6 0.03 230 / 25%)" strokeWidth="6" />
                 <path d="M 40 0 Q 45 35 52 60 T 60 100" fill="none" stroke="oklch(0.6 0.03 230 / 18%)" strokeWidth="4" />
@@ -110,7 +110,7 @@ export default function Market() {
                   </RadarChart>
                 </ResponsiveContainer>
               </div>
-              <p className="-mt-2 text-center font-display text-2xl font-bold text-teal-700">
+              <p className="-mt-2 text-center font-display text-2xl font-bold text-indigo-300">
                 {intel.overall}
                 <span className="text-sm font-normal text-muted-foreground">/100 estimated opportunity</span>
               </p>
@@ -125,7 +125,7 @@ export default function Market() {
                     <span className="w-32 shrink-0 font-medium sm:w-36">{f.factor}</span>
                     <div className="h-2 min-w-8 flex-1 overflow-hidden rounded-full bg-foreground/8">
                       <motion.div
-                        className="h-full rounded-full bg-gradient-to-r from-teal-500 to-sky-500"
+                        className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-violet-500"
                         initial={{ width: 0 }}
                         animate={{ width: `${f.score}%` }}
                         transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
@@ -143,10 +143,10 @@ export default function Market() {
             </GlassCard>
 
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-              <GlassCard className="flex gap-3 p-5 ring-1 ring-teal-600/15">
-                <Compass className="size-9 shrink-0 rounded-xl bg-teal-600 p-1.5 text-white" />
+              <GlassCard className="flex gap-3 p-5 ring-1 ring-indigo-500/15">
+                <Compass className="size-9 shrink-0 rounded-xl bg-indigo-500 p-1.5 text-white" />
                 <div>
-                  <p className="text-xs font-bold tracking-widest text-teal-700 uppercase">Why this location?</p>
+                  <p className="text-xs font-bold tracking-widest text-indigo-300 uppercase">Why this location?</p>
                   <ul className="mt-1 space-y-1.5 text-sm leading-relaxed text-muted-foreground">
                     {intel.reasoning.map((r) => <li key={r}>{r}</li>)}
                   </ul>

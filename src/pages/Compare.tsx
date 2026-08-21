@@ -42,10 +42,10 @@ export default function Compare() {
 
         {/* Recommendation */}
         <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}>
-          <GlassCard className="flex flex-col items-start gap-5 p-6 ring-1 ring-teal-600/15 sm:flex-row sm:items-center">
+          <GlassCard className="flex flex-col items-start gap-5 p-6 ring-1 ring-indigo-500/15 sm:flex-row sm:items-center">
             <ScoreRing score={cmp.totals[cmp.recommendationIndex]} size={116} label="Best fit" />
             <div className="flex-1">
-              <p className="text-xs font-bold tracking-widest text-teal-700 uppercase">Recommendation</p>
+              <p className="text-xs font-bold tracking-widest text-indigo-300 uppercase">Recommendation</p>
               <h2 className="mt-1 font-display text-xl font-bold sm:text-2xl">{best.name}</h2>
               <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-muted-foreground">{cmp.recommendation}</p>
               {/* Decision trace — the three factors that decided it */}
@@ -63,17 +63,17 @@ export default function Compare() {
                   >
                     <span className="w-32 shrink-0 font-semibold sm:w-36">{d.label}</span>
                     <span className="w-7 text-right tabular text-muted-foreground">{d.win}</span>
-                    <span className="text-teal-600">›</span>
+                    <span className="text-indigo-400">›</span>
                     <span className="w-7 tabular text-muted-foreground">{d.lose}</span>
                     <div className="h-1.5 min-w-10 flex-1 overflow-hidden rounded-full bg-foreground/8">
                       <motion.div
-                        className="h-full rounded-full bg-teal-600"
+                        className="h-full rounded-full bg-indigo-500"
                         initial={{ width: 0 }}
                         animate={{ width: `${Math.max(Math.min(d.delta * 2.5, 100), 3)}%` }}
                         transition={{ delay: 0.35 + i * 0.12, duration: 0.5 }}
                       />
                     </div>
-                    <span className="w-10 text-right font-bold tabular text-teal-700">+{d.delta}</span>
+                    <span className="w-10 text-right font-bold tabular text-indigo-300">+{d.delta}</span>
                   </motion.div>
                 ))}
               </div>
@@ -97,13 +97,13 @@ export default function Compare() {
                 hover
                 className={cn(
                   "flex h-full flex-col p-5",
-                  i === cmp.recommendationIndex && "ring-2 ring-teal-600/40",
+                  i === cmp.recommendationIndex && "ring-2 ring-indigo-500/40",
                 )}
               >
                 <div className="flex items-start justify-between gap-2">
                   <h3 className="font-display text-base leading-snug font-bold">{c.name}</h3>
                   {i === cmp.recommendationIndex && (
-                    <span className="flex shrink-0 items-center gap-1 rounded-full bg-teal-600/12 px-2 py-0.5 text-[10px] font-bold tracking-widest text-teal-700 uppercase">
+                    <span className="flex shrink-0 items-center gap-1 rounded-full bg-indigo-500/12 px-2 py-0.5 text-[10px] font-bold tracking-widest text-indigo-300 uppercase">
                       <Check className="size-3" /> Best
                     </span>
                   )}
@@ -115,7 +115,7 @@ export default function Compare() {
                     ["Break-even", `${c.breakEvenMonths} mo`],
                     ["Skill", c.skillRequirement],
                   ].map(([k, v]) => (
-                    <div key={k} className="rounded-lg bg-white/60 px-2.5 py-2 ring-1 ring-black/5">
+                    <div key={k} className="rounded-lg bg-foreground/6 px-2.5 py-2 ring-1 ring-white/5">
                       <p className="text-[10px] tracking-wide text-muted-foreground uppercase">{k}</p>
                       <p className="font-semibold tabular">{v}</p>
                     </div>
@@ -153,15 +153,15 @@ export default function Compare() {
               <tbody>
                 {cmp.factors.map((f) => (
                   <tr key={f.label} className="align-middle">
-                    <td className="rounded-l-xl bg-white/55 py-2.5 pl-3 font-medium">{f.label}</td>
+                    <td className="rounded-l-xl bg-foreground/5 py-2.5 pl-3 font-medium">{f.label}</td>
                     {f.scores.map((s, i) => (
-                      <td key={i} className="bg-white/55 px-2 py-2.5 text-center">
+                      <td key={i} className="bg-foreground/5 px-2 py-2.5 text-center">
                         <div className="mx-auto flex w-28 items-center gap-2">
                           <div className="h-2 flex-1 overflow-hidden rounded-full bg-foreground/8">
                             <motion.div
                               className={cn(
                                 "h-full rounded-full",
-                                i === cmp.recommendationIndex ? "bg-teal-600" : "bg-sky-500/70",
+                                i === cmp.recommendationIndex ? "bg-indigo-500" : "bg-violet-500/70",
                               )}
                               initial={{ width: 0 }}
                               whileInView={{ width: `${s}%` }}
@@ -173,19 +173,19 @@ export default function Compare() {
                         </div>
                       </td>
                     ))}
-                    <td className="rounded-r-xl bg-white/55 pr-3 pl-4 text-right text-[11px] text-muted-foreground">
+                    <td className="rounded-r-xl bg-foreground/5 pr-3 pl-4 text-right text-[11px] text-muted-foreground">
                       {f.note}
                     </td>
                   </tr>
                 ))}
                 <tr>
-                  <td className="rounded-l-xl bg-teal-600/8 py-3 pl-3 font-display font-bold">Overall</td>
+                  <td className="rounded-l-xl bg-indigo-500/8 py-3 pl-3 font-display font-bold">Overall</td>
                   {cmp.totals.map((t, i) => (
-                    <td key={i} className={cn("bg-teal-600/8 py-3 text-center", i === cmp.recommendationIndex && "font-bold")}>
+                    <td key={i} className={cn("bg-indigo-500/8 py-3 text-center", i === cmp.recommendationIndex && "font-bold")}>
                       <span className="font-display text-lg font-bold tabular">{t}</span>
                     </td>
                   ))}
-                  <td className="rounded-r-xl bg-teal-600/8 pr-3 text-right text-[11px] text-muted-foreground">Equal-weight mean</td>
+                  <td className="rounded-r-xl bg-indigo-500/8 pr-3 text-right text-[11px] text-muted-foreground">Equal-weight mean</td>
                 </tr>
               </tbody>
             </table>

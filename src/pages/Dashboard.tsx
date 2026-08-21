@@ -48,7 +48,7 @@ export default function Dashboard() {
           desc={`Your ${profile.businessIdea.split("—")[0].trim().toLowerCase()} plan is ready. Here's where you stand today.`}
           badge={<DemoBanner isDemo={isDemo} />}
           action={
-            <Button variant="outline" className="glass gap-2 rounded-full" onClick={() => navigate("/compare")}>
+            <Button variant="outline" className="glass gap-2 rounded-full transition-all hover:bg-white/5" onClick={() => navigate("/compare")}>
               <Sparkles className="size-4" /> Compare ideas
             </Button>
           }
@@ -58,8 +58,8 @@ export default function Dashboard() {
         {isDemo && (
           <GlassCard className="p-4 sm:p-5">
             <div className="flex items-center gap-2">
-              <Route className="size-4 text-teal-700" />
-              <p className="text-xs font-bold tracking-widest text-teal-700 uppercase">The 3-minute story</p>
+              <Route className="size-4 text-indigo-300" />
+              <p className="text-xs font-bold tracking-widest text-indigo-300 uppercase">The 3-minute story</p>
             </div>
             <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
               {DEMO_JOURNEY.map(({ step, label, desc, to }) => (
@@ -68,11 +68,11 @@ export default function Dashboard() {
                   onClick={() => navigate(to)}
                   className="glass glass-hover group flex min-w-44 shrink-0 items-center gap-3 rounded-2xl p-3 text-left"
                 >
-                  <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-teal-500 to-sky-600 text-xs font-bold text-white">
+                  <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-xs font-bold text-white">
                     {step}
                   </span>
                   <span>
-                    <span className="block text-sm font-semibold group-hover:text-teal-700">{label}</span>
+                    <span className="block text-sm font-semibold group-hover:text-indigo-300">{label}</span>
                     <span className="block text-[11px] text-muted-foreground">{desc}</span>
                   </span>
                 </button>
@@ -103,8 +103,8 @@ export default function Dashboard() {
           </div>
 
           <BorderGlow
-            glowColor="173 80 42"
-            backgroundColor="#ffffffee"
+            glowColor="99 102 241"
+            backgroundColor="#1e1b4bcc"
             borderRadius={24}
             glowRadius={44}
             glowIntensity={0.9}
@@ -138,7 +138,7 @@ export default function Dashboard() {
                   <span className="w-40 shrink-0 text-sm font-medium sm:w-52">{b.label}</span>
                   <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-foreground/8">
                     <motion.div
-                      className="h-full rounded-full bg-gradient-to-r from-teal-500 to-sky-500"
+                      className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-violet-500"
                       initial={{ width: 0 }}
                       animate={{ width: `${b.score}%` }}
                       transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
@@ -159,7 +159,7 @@ export default function Dashboard() {
                   >
                     <div className="rounded-xl bg-white/55 p-4 text-sm leading-relaxed">
                       <p><span className="font-semibold">Why this score:</span> {b.explanation}</p>
-                      <p className="mt-2"><span className="font-semibold text-teal-700">How to improve:</span> {b.improvement}</p>
+                      <p className="mt-2"><span className="font-semibold text-indigo-300">How to improve:</span> {b.improvement}</p>
                       <DataBadge source="AI ESTIMATE" className="mt-3" />
                     </div>
                   </motion.div>
@@ -179,7 +179,7 @@ export default function Dashboard() {
             <GlassCard key={title} hover className="flex flex-col p-5">
               <h4 className="font-display font-bold">{title}</h4>
               <p className="mt-1 flex-1 text-sm leading-relaxed text-muted-foreground">{desc}</p>
-              <Button variant="outline" size="sm" className="glass mt-4 self-start rounded-full" onClick={() => navigate(to)}>
+              <Button variant="outline" size="sm" className="glass mt-4 self-start rounded-full transition-all hover:bg-white/5" onClick={() => navigate(to)}>
                 {cta}
               </Button>
             </GlassCard>

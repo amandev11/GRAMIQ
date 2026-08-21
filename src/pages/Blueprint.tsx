@@ -44,7 +44,7 @@ export default function Blueprint() {
             <ul className="mt-3 space-y-2.5">
               {bp.whyThisBusiness.map((w) => (
                 <li key={w} className="flex gap-2.5 text-sm leading-relaxed text-muted-foreground">
-                  <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-teal-600" />
+                  <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-indigo-400" />
                   {w}
                 </li>
               ))}
@@ -54,7 +54,7 @@ export default function Blueprint() {
 
           <GlassCard className="p-6">
             <h3 className="font-display text-lg font-bold">Revenue model</h3>
-            <p className="mt-3 rounded-xl bg-white/55 p-4 text-sm leading-relaxed">{bp.revenueModel}</p>
+            <p className="mt-3 rounded-xl bg-foreground/5 p-4 text-sm leading-relaxed">{bp.revenueModel}</p>
             <div className="mt-4 grid grid-cols-3 gap-2 text-center">
               {[
                 { l: "Buy price", v: `₹${financials.rawMaterialPerUnit}/L` },
@@ -126,7 +126,7 @@ export default function Blueprint() {
             <ul className="mt-3 space-y-2.5 text-sm leading-relaxed text-muted-foreground">
               {bp.marketOpportunity.map((m) => (
                 <li key={m} className="flex gap-2.5">
-                  <span className="size-1.5 shrink-0 rounded-full bg-sky-500" style={{ marginTop: "0.44rem" }} />
+                  <span className="size-1.5 shrink-0 rounded-full bg-violet-500" style={{ marginTop: "0.44rem" }} />
                   {m}
                 </li>
               ))}
@@ -140,7 +140,7 @@ export default function Blueprint() {
                 <motion.li
                   key={f}
                   variants={{ hidden: { opacity: 0, x: -12 }, show: { opacity: 1, x: 0 } }}
-                  className="flex items-center justify-between gap-3 rounded-xl bg-white/55 px-4 py-3 text-sm"
+                  className="flex items-center justify-between gap-3 rounded-xl bg-foreground/5 px-4 py-3 text-sm"
                 >
                   {f}
                   {i > 0 && (

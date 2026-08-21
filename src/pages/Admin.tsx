@@ -104,7 +104,7 @@ export default function Admin() {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, x: -20 }}
-                  className="flex flex-wrap items-center gap-3 rounded-xl bg-white/55 px-4 py-3"
+                  className="flex flex-wrap items-center gap-3 rounded-xl bg-foreground/5 px-4 py-3"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{d.name}</p>
@@ -131,7 +131,7 @@ export default function Admin() {
 
           <div className="mt-4 flex flex-wrap gap-2">
             <Badge variant="outline" className="border-emerald-600/25 bg-emerald-500/10 text-emerald-700">Verified — used with citation</Badge>
-            <Badge variant="outline" className="border-sky-600/25 bg-sky-500/10 text-sky-700">AI estimate — labeled in answers</Badge>
+            <Badge variant="outline" className="border-violet-500/25 bg-violet-500/10 text-violet-300">AI estimate — labeled in answers</Badge>
             <Badge variant="outline" className="border-amber-600/30 bg-amber-500/10 text-amber-700">Demo data — never shown as real</Badge>
           </div>
         </GlassCard>

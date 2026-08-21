@@ -132,7 +132,7 @@ export default function JudgesMode() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <span className="flex size-9 items-center justify-center rounded-xl bg-gradient-to-br from-teal-500 to-sky-600 text-white shadow-md">
+          <span className="flex size-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-md">
             <Sparkles className="size-4" />
           </span>
           <div>
@@ -169,7 +169,7 @@ export default function JudgesMode() {
             onClick={() => setStep(i)}
             className={cn(
               "h-2 flex-1 rounded-full transition-all duration-300",
-              i === step ? "bg-gradient-to-r from-teal-500 to-sky-500" : i < step ? "bg-teal-600/35" : "bg-foreground/10",
+              i === step ? "bg-gradient-to-r from-indigo-500 to-violet-500" : i < step ? "bg-indigo-500/35" : "bg-foreground/10",
             )}
           />
         ))}
@@ -186,11 +186,11 @@ export default function JudgesMode() {
           className="mt-6"
         >
           <GlassCard className="overflow-hidden p-7 sm:p-10">
-            <span className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-500/15 to-sky-600/15 text-teal-700 ring-1 ring-teal-600/20">
+            <span className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500/15 to-violet-600/15 text-indigo-300 ring-1 ring-indigo-500/20">
               <Icon className="size-6" />
             </span>
             <div className="mt-5 flex items-center gap-2">
-              <p className="text-xs font-bold tracking-[0.25em] text-teal-700 uppercase">{s.kicker}</p>
+              <p className="text-xs font-bold tracking-[0.25em] text-indigo-300 uppercase">{s.kicker}</p>
               <span className="rounded-full bg-foreground/6 px-2 py-0.5 text-[10px] font-bold tracking-widest text-muted-foreground uppercase">{s.stage}</span>
             </div>
             <h1 className="mt-2 font-display text-2xl font-extrabold tracking-tight sm:text-3xl">{s.title}</h1>
@@ -207,7 +207,7 @@ export default function JudgesMode() {
                     ["Margin", `${f.profitMarginPct}%`],
                     ["Annual ROI", `${f.roiPct}%`],
                   ].map(([k, v]) => (
-                    <div key={k} className="rounded-xl bg-white/60 p-3 ring-1 ring-black/5">
+                    <div key={k} className="rounded-xl bg-foreground/6 p-3 ring-1 ring-white/5">
                       <p className="text-[11px] tracking-wide text-muted-foreground uppercase">{k}</p>
                       <p className="font-display font-bold tabular">{v}</p>
                     </div>
@@ -217,7 +217,7 @@ export default function JudgesMode() {
             )}
 
             {profile && comparison && step === 6 && (
-              <div className="mt-6 flex flex-wrap items-center gap-6 rounded-2xl bg-white/55 p-5 ring-1 ring-black/5">
+              <div className="mt-6 flex flex-wrap items-center gap-6 rounded-2xl bg-foreground/5 p-5 ring-1 ring-white/5">
                 <ScoreRing score={comparison.totals[comparison.recommendationIndex]} size={110} label="Best fit" />
                 <div className="min-w-0 flex-1 text-sm leading-relaxed">
                   <p className="font-semibold">Live comparison engine output:</p>

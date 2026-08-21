@@ -23,7 +23,7 @@ function PlanSection({ n, title, children }: { n: number; title: string; childre
       transition={{ delay: reduced ? 0 : 1.5 + n * 0.09, duration: 0.4 }}
     >
       <h2 className="flex items-baseline gap-3 font-display text-xl font-bold">
-        <span className="text-sm text-teal-700 tabular">{String(n).padStart(2, "0")}</span>
+        <span className="text-sm text-indigo-300 tabular">{String(n).padStart(2, "0")}</span>
         {title}
       </h2>
       <div className="mt-3 text-sm leading-relaxed text-foreground/85">{children}</div>
@@ -68,7 +68,7 @@ export default function BusinessPlan() {
                 <motion.span
                   animate={{ rotate: 360 }}
                   transition={{ repeat: Infinity, duration: 1.6, ease: "linear" }}
-                  className="flex size-10 items-center justify-center rounded-xl bg-gradient-to-br from-teal-500 to-sky-600 text-white"
+                  className="flex size-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white"
                 >
                   <FileText className="size-5" />
                 </motion.span>
@@ -80,7 +80,7 @@ export default function BusinessPlan() {
                     {i < step ? (
                       <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
                     ) : (
-                      <span className={cn("size-4 shrink-0 rounded-full border-2", i === step ? "animate-pulse border-teal-600 border-t-transparent" : "border-foreground/20")} style={{ animationDuration: "0.9s" }} />
+                      <span className={cn("size-4 shrink-0 rounded-full border-2", i === step ? "animate-pulse border-indigo-500 border-t-transparent" : "border-foreground/20")} style={{ animationDuration: "0.9s" }} />
                     )}
                     {s}
                   </li>
@@ -104,8 +104,8 @@ export default function BusinessPlan() {
 
         <GlassCard className="p-6 sm:p-10">
           {/* Cover / header */}
-          <header className="border-b-2 border-teal-600/30 pb-6 text-center print-page">
-            <p className="text-xs font-bold tracking-[0.3em] text-teal-700 uppercase">GRAMIQ Business Plan</p>
+          <header className="border-b-2 border-indigo-500/30 pb-6 text-center print-page">
+            <p className="text-xs font-bold tracking-[0.3em] text-indigo-300 uppercase">GRAMIQ Business Plan</p>
             <h1 className="mt-2 font-display text-3xl font-extrabold tracking-tight">Small Dairy Enterprise</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {profile.name} · {profile.location.village}, {profile.location.district}, {profile.location.state}
@@ -188,7 +188,7 @@ export default function BusinessPlan() {
                 ["Break-even units", `${fin.breakEvenUnits.toLocaleString("en-IN")} L/mo`],
                 ["Break-even period", Number.isFinite(fin.breakEvenMonths) ? `${fin.breakEvenMonths} months` : "—"],
               ].map(([k, v]) => (
-                <div key={k} className="rounded-xl bg-white/60 p-3 ring-1 ring-black/5">
+                <div key={k} className="rounded-xl bg-foreground/6 p-3 ring-1 ring-white/5">
                   <p className="text-[11px] tracking-wide text-muted-foreground uppercase">{k}</p>
                   <p className="mt-0.5 font-display text-base font-bold tabular">{v}</p>
                 </div>
@@ -238,7 +238,7 @@ export default function BusinessPlan() {
             {topSchemes.length > 0 ? (
               <ul className="space-y-2">
                 {topSchemes.map((m) => (
-                  <li key={m.scheme.id} className="rounded-xl bg-white/60 p-3 ring-1 ring-black/5">
+                  <li key={m.scheme.id} className="rounded-xl bg-foreground/6 p-3 ring-1 ring-white/5">
                     <p className="font-medium">{m.scheme.name} · {m.matchPct}% criteria match</p>
                     <p className="text-xs text-muted-foreground">
                       {m.scheme.type} · Source: {m.scheme.source.title} · last verified {m.scheme.source.lastVerified}
@@ -256,7 +256,7 @@ export default function BusinessPlan() {
             <ol className="space-y-1.5">
               {actionItems.filter((a) => !a.done).slice(0, 8).map((a) => (
                 <li key={a.id} className="flex gap-2 text-sm">
-                  <span className="shrink-0 rounded-md bg-teal-600/10 px-1.5 py-0.5 text-[10px] font-bold text-teal-700 uppercase">
+                  <span className="shrink-0 rounded-md bg-indigo-500/10 px-1.5 py-0.5 text-[10px] font-bold text-indigo-300 uppercase">
                     {{ "7d": "7 days", "30d": "30 days", "90d": "90 days", "1y": "Year 1" }[a.horizon]}
                   </span>
                   {a.task}

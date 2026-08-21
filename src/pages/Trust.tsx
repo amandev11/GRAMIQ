@@ -48,7 +48,7 @@ export default function Trust() {
                   l.color === "emerald"
                     ? "bg-emerald-500/12 text-emerald-700"
                     : l.color === "sky"
-                      ? "bg-sky-500/12 text-sky-700"
+                      ? "bg-violet-500/12 text-violet-300"
                       : "bg-amber-500/14 text-amber-700"
                 }`}
               >
@@ -92,7 +92,7 @@ export default function Trust() {
           </div>
           <ul className="mt-3 space-y-2">
             {DEMO_SCHEMES.map((s) => (
-              <li key={s.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl bg-white/55 px-4 py-2.5 text-sm">
+              <li key={s.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl bg-foreground/5 px-4 py-2.5 text-sm">
                 <span className="min-w-0 flex-1 truncate font-medium">{s.source.title.replace(" (prototype knowledge base)", "")}</span>
                 <span className="text-xs text-muted-foreground">verified {s.source.lastVerified}</span>
                 <DataBadge source={s.source.status} />

@@ -1,11 +1,12 @@
 import { useEffect, useRef } from "react";
 
 /**
- * Interactive aurora-mesh background.
- * - Drifting color fields rendered on one canvas (cheap: 4 radial gradients).
+ * Interactive aurora-mesh background — DARK PREMIUM.
+ * - Drifting color fields on one canvas (cheap: 4 radial gradients).
  * - Fields lean gently toward the pointer.
  * - Clicking anywhere emits a soft ripple and pushes nearby fields.
  * - Static frame under reduced-motion; paused when the tab is hidden.
+ * Colors: deep indigo, electric blue, restrained violet, cyan accent.
  */
 
 interface Blob {
@@ -21,10 +22,10 @@ interface Blob {
 }
 
 const BLOBS: Blob[] = [
-  { bx: 0.14, by: 0.18, r: 0.5, color: [13, 148, 176], alpha: 0.17, phase: 0.0, speed: 0.00016, ox: 0, oy: 0 },
-  { bx: 0.86, by: 0.12, r: 0.44, color: [59, 130, 246], alpha: 0.13, phase: 1.7, speed: 0.00013, ox: 0, oy: 0 },
-  { bx: 0.72, by: 0.78, r: 0.52, color: [129, 106, 245], alpha: 0.11, phase: 3.1, speed: 0.00011, ox: 0, oy: 0 },
-  { bx: 0.22, by: 0.86, r: 0.46, color: [16, 173, 138], alpha: 0.11, phase: 4.6, speed: 0.00015, ox: 0, oy: 0 },
+  { bx: 0.14, by: 0.16, r: 0.52, color: [79, 70, 229], alpha: 0.10, phase: 0.0, speed: 0.00016, ox: 0, oy: 0 },   // indigo
+  { bx: 0.86, by: 0.10, r: 0.44, color: [59, 130, 246], alpha: 0.08, phase: 1.7, speed: 0.00013, ox: 0, oy: 0 },   // blue
+  { bx: 0.72, by: 0.76, r: 0.50, color: [139, 92, 246], alpha: 0.07, phase: 3.1, speed: 0.00011, ox: 0, oy: 0 },   // violet
+  { bx: 0.22, by: 0.84, r: 0.42, color: [34, 211, 238], alpha: 0.06, phase: 4.6, speed: 0.00015, ox: 0, oy: 0 },   // cyan
 ];
 
 interface Ripple {
@@ -148,12 +149,12 @@ export function MeshBackground() {
         const ease = 1 - (1 - p) ** 3;
         ctx.beginPath();
         ctx.arc(rp.x, rp.y, ease * 260, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(13,148,166,${(1 - p) * 0.28})`;
+        ctx.strokeStyle = `rgba(99,102,241,${(1 - p) * 0.25})`;
         ctx.lineWidth = 1.5;
         ctx.stroke();
         ctx.beginPath();
         ctx.arc(rp.x, rp.y, ease * 150, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(59,130,246,${(1 - p) * 0.05})`;
+        ctx.fillStyle = `rgba(34,211,238,${(1 - p) * 0.04})`;
         ctx.fill();
       }
     };

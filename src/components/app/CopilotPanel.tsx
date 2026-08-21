@@ -87,7 +87,7 @@ function MetricDeltas({ metrics }: { metrics: CopilotMetric[] }) {
       {metrics.map((m) => {
         const changed = m.before !== m.after && m.before !== "—";
         return (
-          <div key={m.label} className="rounded-xl bg-white/70 p-2.5 ring-1 ring-black/5">
+          <div key={m.label} className="rounded-xl bg-foreground/8 p-2.5 ring-1 ring-white/5">
             <p className="text-[10px] leading-tight tracking-wide text-muted-foreground uppercase">{m.label}</p>
             <div className="mt-1 flex items-baseline gap-1.5">
               {changed && <span className="text-[11px] text-muted-foreground">{m.before}</span>}
@@ -195,7 +195,7 @@ export function CopilotPanel({
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
           <div className="flex items-center gap-2">
-            <span className="flex size-8 items-center justify-center rounded-xl bg-gradient-to-br from-teal-500 to-sky-600 text-white">
+            <span className="flex size-8 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white">
               <Sparkles className="size-4" />
             </span>
             <div>
@@ -246,7 +246,7 @@ export function CopilotPanel({
                         "inline-block rounded-full border px-1.5 py-px text-[9px] font-bold tracking-widest uppercase",
                         m.source === "DEMO DATA"
                           ? "border-amber-500/30 bg-amber-400/12 text-amber-700"
-                          : "border-sky-500/25 bg-sky-400/10 text-sky-700",
+                          : "border-violet-500/25 bg-violet-400/10 text-violet-300",
                       )}
                     >
                       {m.source}
