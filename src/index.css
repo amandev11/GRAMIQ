@@ -44,50 +44,52 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
-/* GRAMIQ — light glassmorphism. Bright surfaces, layered translucency,
-   controlled blur, subtle cool teal accents. */
+/* GRAMIQ — premium light glassmorphism.
+   Ink-indigo text, refined cyan primary, layered translucency over an
+   interactive aurora-mesh canvas. */
 :root {
   --radius: 0.875rem;
-  --background: oklch(0.975 0.006 220);
-  --foreground: oklch(0.24 0.02 240);
-  --card: oklch(1 0 0 / 72%);
-  --card-foreground: oklch(0.24 0.02 240);
+  --background: oklch(0.986 0.004 235);
+  --foreground: oklch(0.235 0.03 262);
+  --card: oklch(1 0 0 / 68%);
+  --card-foreground: oklch(0.235 0.03 262);
   --popover: oklch(1 0 0 / 92%);
-  --popover-foreground: oklch(0.24 0.02 240);
-  --primary: oklch(0.56 0.11 205);
-  --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.95 0.012 220);
-  --secondary-foreground: oklch(0.32 0.03 235);
-  --muted: oklch(0.955 0.008 220);
-  --muted-foreground: oklch(0.52 0.02 235);
-  --accent: oklch(0.94 0.025 200);
-  --accent-foreground: oklch(0.35 0.05 210);
+  --popover-foreground: oklch(0.235 0.03 262);
+  --primary: oklch(0.52 0.118 213);
+  --primary-foreground: oklch(0.99 0.005 210);
+  --secondary: oklch(0.955 0.01 235);
+  --secondary-foreground: oklch(0.3 0.035 255);
+  --muted: oklch(0.958 0.007 235);
+  --muted-foreground: oklch(0.495 0.022 252);
+  --accent: oklch(0.945 0.022 218);
+  --accent-foreground: oklch(0.34 0.05 225);
   --destructive: oklch(0.585 0.21 27);
-  --border: oklch(0.55 0.02 230 / 14%);
-  --input: oklch(0.55 0.02 230 / 16%);
-  --ring: oklch(0.62 0.09 205 / 45%);
+  --border: oklch(0.5 0.03 250 / 13%);
+  --input: oklch(0.5 0.03 250 / 15%);
+  --ring: oklch(0.6 0.09 212 / 50%);
   --chart-1: oklch(0.58 0.12 205);
   --chart-2: oklch(0.68 0.13 165);
   --chart-3: oklch(0.64 0.14 300);
   --chart-4: oklch(0.78 0.13 80);
   --chart-5: oklch(0.63 0.17 25);
   --sidebar: oklch(1 0 0 / 60%);
-  --sidebar-foreground: oklch(0.28 0.02 240);
-  --sidebar-primary: oklch(0.56 0.11 205);
-  --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.95 0.015 215);
-  --sidebar-accent-foreground: oklch(0.33 0.04 225);
-  --sidebar-border: oklch(0.55 0.02 230 / 12%);
-  --sidebar-ring: oklch(0.62 0.09 205 / 45%);
+  --sidebar-foreground: oklch(0.27 0.025 255);
+  --sidebar-primary: oklch(0.52 0.118 213);
+  --sidebar-primary-foreground: oklch(0.99 0.005 210);
+  --sidebar-accent: oklch(0.95 0.015 220);
+  --sidebar-accent-foreground: oklch(0.32 0.04 235);
+  --sidebar-border: oklch(0.5 0.03 250 / 11%);
+  --sidebar-ring: oklch(0.6 0.09 212 / 45%);
   /* GRAMIQ semantic tokens */
   --success: oklch(0.62 0.14 160);
   --warning: oklch(0.72 0.14 75);
-  --glass-bg: oklch(1 0 0 / 62%);
-  --glass-bg-strong: oklch(1 0 0 / 80%);
-  --glass-border: oklch(1 0 0 / 65%);
-  --glass-edge: oklch(0.6 0.05 220 / 10%);
-  --glass-shadow: 0 8px 32px -12px oklch(0.4 0.06 230 / 18%),
-    0 2px 8px -4px oklch(0.4 0.06 230 / 10%);
+  --glass-bg: oklch(1 0 0 / 64%);
+  --glass-bg-strong: oklch(1 0 0 / 84%);
+  --glass-border: oklch(1 0 0 / 70%);
+  --glass-edge: oklch(0.45 0.05 250 / 9%);
+  --glass-shadow: 0 24px 60px -24px oklch(0.36 0.06 252 / 20%),
+    0 4px 14px -6px oklch(0.36 0.06 252 / 9%),
+    inset 0 1px 0 var(--glass-border);
 }
 
 .dark {
@@ -131,32 +133,18 @@
   html {
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
   }
   body {
     @apply text-foreground;
     background-color: var(--background);
-    /* Bright aurora backdrop — soft cool color fields behind the glass layers */
-    background-image:
-      radial-gradient(
-        52rem 40rem at 8% -10%,
-        oklch(0.85 0.07 205 / 42%) 0%,
-        transparent 60%
-      ),
-      radial-gradient(
-        46rem 36rem at 100% 0%,
-        oklch(0.88 0.06 165 / 34%) 0%,
-        transparent 55%
-      ),
-      radial-gradient(
-        50rem 44rem at 50% 115%,
-        oklch(0.87 0.06 280 / 26%) 0%,
-        transparent 60%
-      ),
-      linear-gradient(
-        180deg,
-        oklch(0.982 0.005 215) 0%,
-        oklch(0.966 0.01 220) 100%
-      );
+    /* Subtle base wash — the interactive mesh canvas paints the color fields */
+    background-image: linear-gradient(
+      180deg,
+      oklch(0.99 0.003 230) 0%,
+      oklch(0.972 0.008 240) 100%
+    );
     background-attachment: fixed;
     min-height: 100vh;
   }
@@ -165,14 +153,41 @@
   h3,
   h4 {
     font-family: var(--font-display);
-    letter-spacing: -0.02em;
+    letter-spacing: -0.03em;
   }
   button:not([disabled]),
   [role="button"]:not([disabled]) {
     cursor: pointer;
   }
   ::selection {
-    background: oklch(0.62 0.1 205 / 25%);
+    background: oklch(0.6 0.09 212 / 22%);
+  }
+
+  /* Refined slim scrollbar */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: oklch(0.55 0.03 250 / 22%);
+    border-radius: 8px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: oklch(0.5 0.05 240 / 35%);
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+
+  /* Custom cursor (enabled from CustomCursor on fine pointers) */
+  @media (pointer: fine) {
+    html.has-custom-cursor *:not(input):not(textarea):not(select) {
+      cursor: none !important;
+    }
   }
 }
 
@@ -208,9 +223,9 @@
   .text-gradient {
     background: linear-gradient(
       100deg,
-      oklch(0.45 0.1 215) 0%,
-      oklch(0.52 0.12 195) 55%,
-      oklch(0.5 0.1 260) 100%
+      oklch(0.5 0.12 220) 0%,
+      oklch(0.55 0.12 200) 45%,
+      oklch(0.55 0.14 285) 100%
     );
     -webkit-background-clip: text;
     background-clip: text;
@@ -237,6 +252,9 @@
   body {
     background: white !important;
     background-image: none !important;
+  }
+  .fx-layer {
+    display: none !important;
   }
   .no-print {
     display: none !important;

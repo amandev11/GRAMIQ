@@ -8,6 +8,8 @@ import React, { StrictMode, useEffect, lazy, Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router";
 import { BusinessProvider } from "@/context/BusinessProvider";
+import { MeshBackground } from "@/components/fx/MeshBackground";
+import { CustomCursor } from "@/components/fx/CustomCursor";
 import "./index.css";
 
 // Lazy load route components for better code splitting
@@ -124,6 +126,8 @@ function RouteSyncer() {
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <RootErrorBoundary>
+      <MeshBackground />
+      <CustomCursor />
       <ToolbarErrorBoundary>
         <VlyToolbar />
       </ToolbarErrorBoundary>        <ConvexAuthProvider client={convex}>
