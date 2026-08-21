@@ -7,6 +7,7 @@ import { useBusiness } from "@/context/BusinessProvider";
 import { computeFinancials, formatInr } from "@/lib/finance/engine";
 import { computeScores } from "@/lib/intelligence/scores";
 import { cn } from "@/lib/utils";
+import BorderGlow from "@/components/reactbits/BorderGlow";
 import { motion } from "framer-motion";
 import {
   ChevronDown, HandCoins, PiggyBank, Route, Sparkles, TrendingUp,
@@ -101,13 +102,20 @@ export default function Dashboard() {
             />
           </div>
 
-          <GlassCard hover className="flex flex-col items-center justify-center px-8 py-6">
+          <BorderGlow
+            glowColor="173 80 42"
+            backgroundColor="#ffffffee"
+            borderRadius={24}
+            glowRadius={44}
+            glowIntensity={0.9}
+            className="flex flex-col items-center justify-center px-8 py-6"
+          >
             <p className="mb-2 text-xs font-semibold tracking-widest text-muted-foreground uppercase">Business Readiness</p>
             <ScoreRing score={scores.overall} size={148} />
             <p className="mt-2 text-center text-xs text-muted-foreground">
               Composite of 5 factors — tap any to explore
             </p>
-          </GlassCard>
+          </BorderGlow>
         </div>
 
         {/* Score breakdown */}

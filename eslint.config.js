@@ -6,7 +6,7 @@ import tseslint from "typescript-eslint";
 import eslintConfigPrettier from "eslint-config-prettier/flat";
 
 export default tseslint.config(
-  { ignores: ["dist"] },
+  { ignores: ["dist", "src/convex/_generated/**"] },
   {
     extends: [
       js.configs.recommended,
@@ -28,6 +28,21 @@ export default tseslint.config(
         "warn",
         { allowConstantExport: true },
       ],
+    },
+  },
+  {
+    // Vendored React Bits ports (https://reactbits.dev) — they intentionally use
+    // ref-mutation-during-render and other patterns flagged by the new hooks rules.
+    files: ["src/components/reactbits/**"],
+    rules: {
+      "react-hooks/refs": "off",
+      "react-hooks/immutability": "off",
+      "react-hooks/set-state-in-effect": "off",
+      "react-hooks/preserve-manual-memoization": "off",
+      "react-hooks/purity": "off",
+      "react-hooks/globals": "off",
+      "react-hooks/use-memo": "off",
+      "prefer-const": "off",
     },
   },
 );

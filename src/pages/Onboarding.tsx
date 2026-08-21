@@ -8,10 +8,11 @@ import type { EntrepreneurProfile } from "@/lib/types";
 import { computeFinancials, formatInr } from "@/lib/finance/engine";
 import { computeScores } from "@/lib/intelligence/scores";
 import { cn } from "@/lib/utils";
+import OptionWheel from "@/components/reactbits/OptionWheel";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowLeft, ArrowRight, BadgeIndianRupee, Building2, CheckCircle2, Coins, Languages, Lightbulb,
-  MapPin, Mic, MicOff, Sparkles, Target, UserRound,
+  ArrowLeft, ArrowRight, BadgeIndianRupee, Building2, CheckCircle2, Coins,
+  Lightbulb, MapPin, Mic, MicOff, Sparkles, Target, UserRound,
 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
@@ -212,20 +213,17 @@ export default function Onboarding() {
     // Step 3: language + generate
     <div key="s3" className="space-y-5">
       <h2 className="font-display text-2xl font-bold sm:text-3xl">How should GRAMIQ talk to you?</h2>
-      <div className="grid gap-2.5 sm:grid-cols-3">
-        {([["hi", "हिन्दी"], ["en", "English"], ["hinglish", "Hinglish"]] as const).map(([key, label]) => (
-          <button
-            key={key}
-            onClick={() => setLanguage(key)}
-            className={cn(
-              "glass flex items-center justify-center gap-2 rounded-2xl py-4 text-sm font-semibold",
-              language === key && "ring-2 ring-primary/50",
-            )}
-          >
-            <Languages className="size-4 text-primary" /> {label}
-          </button>
-        ))}
-      </div>
+      <GlassCard className="flex flex-col items-center bg-white/50 p-4">
+        <OptionWheel
+          items={["हिन्दी · Hindi", "English", "Hinglish"]}
+          defaultSelected={language === "en" ? 1 : language === "hinglish" ? 2 : 0}
+          onChange={(i) => setLanguage(((["hi", "en", "hinglish"] as const)[i]) ?? "hi")}
+          textColor="#94a3b8"
+          activeColor="#0d9488"
+          fontSize={1.35}
+        />
+        <p className="mt-1 text-xs text-muted-foreground">Scroll or drag to choose your language</p>
+      </GlassCard>
       <GlassCard className="flex items-start gap-3 bg-white/50 p-4">
         <Lightbulb className="mt-0.5 size-5 shrink-0 text-amber-500" />
         <p className="text-sm leading-relaxed text-muted-foreground">

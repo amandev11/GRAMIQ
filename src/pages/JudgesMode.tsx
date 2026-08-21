@@ -4,6 +4,7 @@ import { useBusiness } from "@/context/BusinessProvider";
 import { computeFinancials, formatInr } from "@/lib/finance/engine";
 import { compareBusinesses } from "@/lib/intelligence/blueprint";
 import { cn } from "@/lib/utils";
+import LineSidebar from "@/components/reactbits/LineSidebar";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowLeft, ArrowRight, Bot, FileText, LineChart, MapPinned, Play, Ribbon,
@@ -79,6 +80,17 @@ const STEPS = [
   },
 ] as const;
 
+const STEP_LABELS = [
+  "The Problem",
+  "The Solution",
+  "Financial Engine",
+  "Risk Simulation",
+  "Hyper-local AI",
+  "Scheme Matching",
+  "Health & Risk",
+  "Business Plan",
+];
+
 export default function JudgesMode() {
   const navigate = useNavigate();
   const { profile, financials } = useBusiness();
@@ -97,7 +109,26 @@ export default function JudgesMode() {
   }, [autoplay, step]);
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10 sm:px-8">
+    <div className="mx-auto max-w-5xl px-4 py-10 sm:px-8 lg:grid lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-10">
+      {/* Stage navigator — desktop rail */}
+      <aside className="hidden self-start lg:sticky lg:top-24 lg:block" aria-label="Story steps">
+        <LineSidebar
+          key={step}
+          items={STEP_LABELS}
+          defaultActive={step}
+          onItemClick={(i) => {
+            setAutoplay(false);
+            setStep(i);
+          }}
+          accentColor="#0d9488"
+          textColor="#64748b"
+          markerColor="#cbd5e1"
+          fontSize={0.95}
+          itemGap={14}
+        />
+      </aside>
+
+      <div className="min-w-0">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
@@ -230,6 +261,7 @@ export default function JudgesMode() {
             Explore the product <ArrowRight className="size-4" />
           </Button>
         )}
+      </div>
       </div>
     </div>
   );

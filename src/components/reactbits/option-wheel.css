@@ -1,0 +1,51 @@
+.option-wheel {
+  --ow-text-color: #94a3b8;
+  --ow-active-color: #0d9488;
+  --ow-font-size: 3rem;
+  --ow-inset: 80px;
+
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  outline: none;
+}
+
+.option-wheel:focus-visible {
+  outline: 2px solid oklch(0.62 0.09 205 / 60%);
+  outline-offset: -4px;
+  border-radius: 16px;
+}
+
+.option-wheel--dragging {
+  cursor: grabbing;
+}
+
+.option-wheel__item {
+  position: absolute;
+  top: 50%;
+  left: var(--ow-inset);
+  white-space: nowrap;
+  font-size: var(--ow-font-size);
+  line-height: 1;
+  font-weight: 300;
+  transform-origin: left center;
+  cursor: pointer;
+  will-change: transform, opacity, filter;
+  font-family: var(--font-display, inherit);
+  letter-spacing: -0.02em;
+  color: color-mix(in srgb, var(--ow-active-color) calc(var(--ow-p, 0) * 100%), var(--ow-text-color));
+}
+
+.option-wheel--right .option-wheel__item {
+  left: auto;
+  right: var(--ow-inset);
+  transform-origin: right center;
+}
+
+.option-wheel__item--selected {
+  font-weight: 700;
+}

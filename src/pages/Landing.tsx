@@ -1,6 +1,7 @@
+import { useRef } from "react";
 import { useBusiness } from "@/context/BusinessProvider";
 import { useAuth } from "@/hooks/use-auth";
-import { motion } from "framer-motion";
+import { motion, useInView } from "framer-motion";
 import {
   ArrowRight, Bot, FileText, LayoutDashboard, LineChart, MapPinned, Mic, Play,
   Ribbon, Scale, ShieldCheck, Sparkles, Target,
@@ -8,6 +9,13 @@ import {
 import { useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
 import { GlassCard } from "@/components/glass/primitives";
+import Aurora from "@/components/reactbits/Aurora";
+import SpecularButton from "@/components/reactbits/SpecularButton";
+import DepthCarousel from "@/components/reactbits/DepthCarousel";
+import AccordionGallery from "@/components/reactbits/AccordionGallery";
+import ProfileCard from "@/components/reactbits/ProfileCard";
+import InfiniteMenu from "@/components/reactbits/InfiniteMenu";
+import { artTile, artAvatar } from "@/lib/data/art";
 
 /** Mirrors the in-app journey rail — one narrative everywhere. */
 const PIPELINE = [
@@ -66,6 +74,60 @@ const fadeUp = {
   transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] as const },
 };
 
+/** One slide per journey stage — mirrors the in-app rail. */
+const TOUR = [
+  { stage: "Idea", sub: "Speak or type your idea", glyph: "✦", from: "#14b8a6", to: "#0f766e" },
+  { stage: "Understand", sub: "AI reads your situation", glyph: "◎", from: "#0ea5e9", to: "#0369a1" },
+  { stage: "Analyze", sub: "Local market intelligence", glyph: "▦", from: "#0d9488", to: "#115e59" },
+  { stage: "Simulate", sub: "Live what-if scenarios", glyph: "≋", from: "#38bdf8", to: "#1d4ed8" },
+  { stage: "Optimize", sub: "Risk-aware adjustments", glyph: "⚙", from: "#10b981", to: "#065f46" },
+  { stage: "Fund", sub: "Scheme matching with sources", glyph: "₹", from: "#06b6d4", to: "#155e75" },
+  { stage: "Act", sub: "Your 12-month roadmap", glyph: "➤", from: "#2dd4bf", to: "#0e7490" },
+];
+
+const SHOWCASE = [
+  {
+    label: "Business Blueprint",
+    image: artTile({ from: "#0d9488", to: "#164e63", glyph: "◈", label: "BLUEPRINT", sub: "11-section plan of record" }),
+  },
+  {
+    label: "Live Financial Simulator",
+    image: artTile({ from: "#0ea5e9", to: "#1e40af", glyph: "≋", label: "SIMULATOR", sub: "what-if in real time" }),
+  },
+  {
+    label: "Hyper-local Market Map",
+    image: artTile({ from: "#059669", to: "#134e4a", glyph: "◉", label: "LOCAL MAP", sub: "markets · suppliers · risk" }),
+  },
+  {
+    label: "Scheme Matching",
+    image: artTile({ from: "#0891b2", to: "#155e75", glyph: "₹", label: "SCHEMES", sub: "eligibility with receipts" }),
+  },
+  {
+    label: "Bank-ready Plan PDF",
+    image: artTile({ from: "#0284c7", to: "#0f172a", glyph: "▤", label: "PLAN PDF", sub: "one click, ten sections" }),
+  },
+];
+
+const IMPACT = [
+  { image: artTile({ w: 400, h: 400, from: "#14b8a6", to: "#0f766e", glyph: "₹" }), title: "Lower advice cost", description: "First-pass business guidance without consultant fees." },
+  { image: artTile({ w: 400, h: 400, from: "#0ea5e9", to: "#1d4ed8", glyph: "▦" }), title: "Financial literacy", description: "Every rupee explained through visible formulas." },
+  { image: artTile({ w: 400, h: 400, from: "#10b981", to: "#065f46", glyph: "◎" }), title: "Local opportunity", description: "Decisions grounded in village-level context." },
+  { image: artTile({ w: 400, h: 400, from: "#0891b2", to: "#155e75", glyph: "₹" }), title: "Scheme access", description: "Relevant programs surfaced transparently." },
+  { image: artTile({ w: 400, h: 400, from: "#2dd4bf", to: "#0e7490", glyph: "✦" }), title: "Voice-first access", description: "Works in Hindi, English and Hinglish speech." },
+  { image: artTile({ w: 400, h: 400, from: "#38bdf8", to: "#0369a1", glyph: "➤" }), title: "Action, not theory", description: "A dated 12-month roadmap from day one." },
+];
+
+/** WebGL impact sphere mounts only when scrolled near — keeps first paint light. */
+function ImpactSphere() {
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: true, margin: "300px" });
+  return (
+    <div ref={ref} className="relative mx-auto h-[460px] w-full max-w-3xl">
+      {inView && <InfiniteMenu items={IMPACT} />}
+    </div>
+  );
+}
+
 export default function Landing() {
   const navigate = useNavigate();
   const { launchDemo, hasBusiness } = useBusiness();
@@ -109,7 +171,14 @@ export default function Landing() {
       </header>
 
       {/* Hero */}
-      <section className="mx-auto max-w-6xl px-4 pt-16 pb-10 sm:px-8 sm:pt-24">
+      <section className="relative mx-auto max-w-6xl px-4 pt-16 pb-10 sm:px-8 sm:pt-24">
+        {/* Aurora backdrop — cool spectrum on bright ground */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 -top-16 h-[520px] opacity-45 [mask-image:radial-gradient(ellipse_65%_65%_at_50%_25%,black,transparent)]"
+        >
+          <Aurora colorStops={["#5eead4", "#7dd3fc", "#a5b4fc"]} amplitude={0.85} blend={0.55} speed={0.32} />
+        </div>
         <div className="mx-auto max-w-3xl text-center">
           <motion.div {...fadeUp}>
             <span className="glass inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold tracking-wide text-teal-700">
@@ -137,9 +206,20 @@ export default function Landing() {
             transition={{ ...fadeUp.transition, delay: 0.24 }}
             className="mt-8 flex flex-wrap items-center justify-center gap-3"
           >
-            <Button size="lg" className="gap-2 rounded-full px-7 text-base" onClick={() => navigate("/onboarding")}>
-              Build My Business <ArrowRight className="size-4" />
-            </Button>
+            <SpecularButton
+              size="lg"
+              onClick={() => navigate("/onboarding")}
+              tint="#ffffff"
+              tintOpacity={0.6}
+              blur={0.5}
+              textColor="#042f2e"
+              lineColor="#0d9488"
+              baseColor="#0f766e"
+              intensity={1.15}
+              autoAnimate
+            >
+              <span className="inline-flex items-center gap-2 px-5">Build My Business <ArrowRight className="size-4" /></span>
+            </SpecularButton>
             <Button size="lg" variant="outline" className="glass gap-2 rounded-full px-7 text-base" onClick={handleDemo}>
               <Play className="size-4" /> Launch Demo
             </Button>
@@ -212,6 +292,49 @@ export default function Landing() {
           ))}
         </div>
 
+        {/* Product tour — depth carousel through the seven stages */}
+        <motion.div {...fadeUp} transition={{ ...fadeUp.transition, delay: 0.1 }} className="mt-20">
+          <div className="mb-6 text-center">
+            <h3 className="font-display text-xl font-bold tracking-tight sm:text-2xl">The journey, one screen at a time</h3>
+            <p className="mt-2 text-sm text-muted-foreground">Drag, scroll or just watch — each stage is a real screen in the app.</p>
+          </div>
+          <div className="relative h-[380px] w-full">
+            <DepthCarousel
+              items={TOUR.map((t) => ({
+                image: artTile({ from: t.from, to: t.to, glyph: t.glyph, label: t.stage.toUpperCase(), sub: t.sub }),
+                alt: t.stage,
+              }))}
+              cardWidth={260}
+              cardHeight={330}
+              radius={22}
+              tint="#cbd5e1"
+              depth={190}
+              spread={78}
+              tilt={17}
+              blur={5}
+              autoplay
+              autoplayDelay={2800}
+              loop
+            />
+          </div>
+        </motion.div>
+
+        {/* What GRAMIQ builds — accordion showcase */}
+        <motion.div {...fadeUp} transition={{ ...fadeUp.transition, delay: 0.1 }} className="mt-20">
+          <div className="mb-6 text-center">
+            <h3 className="font-display text-xl font-bold tracking-tight sm:text-2xl">Five deliverables from one idea</h3>
+          </div>
+          <AccordionGallery
+            items={SHOWCASE}
+            defaultIndex={1}
+            height={340}
+            radius={18}
+            expandRatio={0.48}
+            accentColor="#0d9488"
+            trigger="hover"
+          />
+        </motion.div>
+
         {/* Provenance legend */}
         <motion.div {...fadeUp} transition={{ ...fadeUp.transition, delay: 0.1 }} className="mt-6">
           <GlassCard className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 px-6 py-4">
@@ -253,14 +376,53 @@ export default function Landing() {
           </GlassCard>
         </motion.div>
 
-        <div className="mt-12 text-center">
+        {/* Meet the demo entrepreneur + final CTA */}
+        <motion.div {...fadeUp} className="mt-16 grid items-center gap-8 lg:grid-cols-[minmax(0,340px)_1fr]">
+          <div className="mx-auto w-full max-w-[340px]">
+            <ProfileCard
+              name="Ramesh Kumar"
+              title="Aspiring dairy entrepreneur · Jaipur, RJ"
+              handle="demo-profile"
+              status="DEMO DATA"
+              contactText="Launch Demo"
+              avatarUrl={artAvatar("RK")}
+              miniAvatarUrl={artAvatar("RK")}
+              innerGradient="linear-gradient(145deg,#134e4a8c 0%,#38bdf844 100%)"
+              behindGlowColor="#14b8a6"
+              onContactClick={handleDemo}
+            />
+          </div>
+          <div className="text-center lg:text-left">
+            <h2 className="font-display text-2xl font-extrabold tracking-tight sm:text-3xl">
+              Meet Ramesh — and watch his idea become a business.
+            </h2>
+            <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-muted-foreground lg:mx-0">
+              ₹1,00,000 capital, beginner experience, Hindi-first. The entire demo journey — blueprint,
+              simulator, scheme matches and a bank-ready plan — runs on his profile instantly.
+            </p>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
+              <Button size="lg" variant="outline" className="glass gap-2 rounded-full px-7" onClick={handleDemo}>
+                <Play className="size-4" /> Launch Demo
+              </Button>
+              <span className="text-xs text-muted-foreground">No sign-up · loads in one click</span>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Impact sphere — drag to explore */}
+        <motion.div {...fadeUp} className="mt-20">
+          <div className="mb-2 text-center">
+            <h3 className="font-display text-xl font-bold tracking-tight sm:text-2xl">Built for impact</h3>
+            <p className="mt-2 text-sm text-muted-foreground">Drag the sphere — six outcomes GRAMIQ optimizes for.</p>
+          </div>
+          <ImpactSphere />
+        </motion.div>
+
+        <div className="mt-16 text-center">
           <h2 className="font-display text-2xl font-bold sm:text-3xl">Your AI Business Copilot for Rural India.</h2>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <Button size="lg" className="gap-2 rounded-full px-7" onClick={() => navigate("/onboarding")}>
               Build My Business <ArrowRight className="size-4" />
-            </Button>
-            <Button size="lg" variant="outline" className="glass rounded-full px-7" onClick={handleDemo}>
-              <Play className="size-4" /> Explore Demo
             </Button>
           </div>
         </div>
