@@ -1,13 +1,16 @@
-import { GlassCard } from "@/components/glass/primitives";
+import { GlassCard, ScoreRing } from "@/components/glass/primitives";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useBusiness } from "@/context/BusinessProvider";
 import { useAuth } from "@/hooks/use-auth";
 import { useSpeechRecognition } from "@/hooks/use-speech";
+import type { EntrepreneurProfile } from "@/lib/types";
+import { computeFinancials, formatInr } from "@/lib/finance/engine";
+import { computeScores } from "@/lib/intelligence/scores";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowLeft, ArrowRight, BadgeIndianRupee, Building2, Coins, Languages, Lightbulb,
+  ArrowLeft, ArrowRight, BadgeIndianRupee, Building2, CheckCircle2, Coins, Languages, Lightbulb,
   MapPin, Mic, MicOff, Sparkles, Target, UserRound,
 } from "lucide-react";
 import { useState } from "react";
@@ -33,7 +36,7 @@ const GOAL_MAP: Record<string, (typeof QUICK_STARTS)[number]["key"]> = {
 
 export default function Onboarding() {
   const navigate = useNavigate();
-  const { setProfile, launchDemo } = useBusiness();
+  const { setProfile, launchDemo, financials } = useBusiness();
   const { isAuthenticated, signIn } = useAuth();
 
   async function handleDemoLaunch() {
@@ -56,29 +59,49 @@ export default function Onboarding() {
   const [goal, setGoal] = useState<(typeof QUICK_STARTS)[number]["key"]>("new-business");
   const [language, setLanguage] = useState<"hi" | "en" | "hinglish">("hi");
   const [generating, setGenerating] = useState(false);
+  const [genSteps, setGenSteps] = useState<Array<{ label: string; detail: string }>>([]);
+  const [genPhase, setGenPhase] = useState(0);
   const { listening, supported, start, stop } = useSpeechRecognition((t) => setIdea((p) => (p ? `${p} ${t}` : t)));
 
+  /** Build the profile object exactly as it will be saved. */
+  function buildProfile(): EntrepreneurProfile {
+    return {
+      name: name.trim() || "Entrepreneur",
+      location: {
+        state: state.trim() || "Rajasthan",
+        district: district.trim() || "Jaipur",
+        village: village.trim() || "Bassi",
+      },
+      businessIdea: idea.trim() || "Small dairy business — collect milk locally and sell to households",
+      capital: Math.max(0, parseInt(capital.replace(/\D/g, "") || "0", 10)),
+      existingBusiness: goal === "improve" ? "full" : "none",
+      experience,
+      resources: ["Family labor available"],
+      goal: GOAL_MAP[goal],
+      timelineMonths: 6,
+      language,
+    };
+  }
+
+  /** Cinematic generation: each stage shows genuinely computed values. */
   function finish() {
     setGenerating(true);
-    setTimeout(() => {
-      setProfile({
-        name: name.trim() || "Entrepreneur",
-        location: {
-          state: state.trim() || "Rajasthan",
-          district: district.trim() || "Jaipur",
-          village: village.trim() || "Bassi",
-        },
-        businessIdea: idea.trim() || "Small dairy business — collect milk locally and sell to households",
-        capital: Math.max(0, parseInt(capital.replace(/\D/g, "") || "0", 10)),
-        existingBusiness: goal === "improve" ? "full" : "none",
-        experience,
-        resources: ["Family labor available"],
-        goal: GOAL_MAP[goal],
-        timelineMonths: 6,
-        language,
-      });
-      navigate("/dashboard");
-    }, 1400);
+    const p = buildProfile();
+    const fin = computeFinancials(financials);
+    const scores = computeScores(p, financials);
+    setGenSteps([
+      { label: "Understanding your idea", detail: `${p.businessIdea.split("—")[0].trim().slice(0, 44)}… · ${p.location.village}, ${p.location.district}` },
+      { label: "Structuring your financial model", detail: `Startup ${formatInr(fin.totalStartupCost)} · profit ${formatInr(fin.operatingProfit)}/mo · break-even ${Number.isFinite(fin.breakEvenMonths) ? fin.breakEvenMonths : "—"} mo` },
+      { label: "Scoring feasibility & risk", detail: `Readiness ${scores.overall}/100 · ${scores.breakdown.filter((b) => b.score >= 60).length}/5 factors healthy` },
+    ]);
+    // Stage timings keep total under ~2.4s
+    window.setTimeout(() => setGenPhase(1), 700);
+    window.setTimeout(() => setGenPhase(2), 1450);
+    window.setTimeout(() => {
+      setGenPhase(3);
+      setProfile(p);
+    }, 2150);
+    window.setTimeout(() => navigate("/dashboard"), 2750);
   }
 
   const steps = [
@@ -248,41 +271,91 @@ export default function Onboarding() {
           ))}
         </div>
 
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={step}
-            initial={{ opacity: 0, x: 24 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -24 }}
-            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <GlassCard className="p-6 sm:p-8">{steps[step]}</GlassCard>
-          </motion.div>
-        </AnimatePresence>
+        {/* Cinematic generation sequence — every value shown is genuinely computed */}
+        {generating ? (
+          <GlassCard className="p-8">
+            <div className="flex flex-col items-center text-center">
+              {genPhase >= 3 && genSteps.length === 3 ? (() => {
+                const p = buildProfile();
+                const scores = computeScores(p, financials);
+                return (
+                  <motion.div initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 200, damping: 16 }}>
+                    <ScoreRing score={scores.overall} size={128} label="Ready" />
+                  </motion.div>
+                );
+              })() : (
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ repeat: Infinity, duration: 1.6, ease: "linear" }}
+                  className="flex size-16 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-500 to-sky-600 text-white shadow-lg"
+                >
+                  <Sparkles className="size-7" />
+                </motion.div>
+ )}
+              <p className="mt-4 font-display text-lg font-bold">
+                {genPhase >= 3 ? "Your business blueprint is ready" : "Building your blueprint…"}
+              </p>
+            </div>
+            <ul className="mx-auto mt-6 max-w-md space-y-2.5">
+              {genSteps.map((s, i) => {
+                const active = genPhase >= i;
+                const done = genPhase > i;
+                return (
+                  <li
+                    key={s.label}
+                    className={cn(
+                      "rounded-xl px-4 py-3 transition-all duration-500",
+                      active ? "bg-white/70 ring-1 ring-teal-600/20" : "bg-foreground/4 opacity-40",
+                    )}
+                  >
+                    <p className="flex items-center gap-2 text-sm font-semibold">
+                      {done ? (
+                        <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
+                      ) : (
+                        <span className="size-4 shrink-0 animate-pulse rounded-full border-2 border-teal-600 border-t-transparent" style={{ animationDuration: "0.9s" }} />
+                      )}
+                      {s.label}
+                    </p>
+                    {active && (
+                      <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }} className="mt-1 pl-6 text-xs text-muted-foreground tabular">
+                        {s.detail}
+                      </motion.p>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </GlassCard>
+        ) : (
+          <>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={step}
+                initial={{ opacity: 0, x: 24 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -24 }}
+                transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <GlassCard className="p-6 sm:p-8">{steps[step]}</GlassCard>
+              </motion.div>
+            </AnimatePresence>
 
-        <div className="mt-6 flex items-center justify-between">
-          <Button variant="ghost" disabled={step === 0 || generating} onClick={() => setStep((s) => s - 1)}>
-            <ArrowLeft className="size-4" /> Back
-          </Button>
-          {step < 3 ? (
-            <Button disabled={step === 0} onClick={() => setStep((s) => s + 1)} className="gap-2">
-              Continue <ArrowRight className="size-4" />
-            </Button>
-          ) : (
-            <Button onClick={finish} disabled={generating} className="gap-2">
-              {generating ? (
-                <>
-                  <motion.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}>
-                    <Sparkles className="size-4" />
-                  </motion.span>
-                  Building your blueprint…
-                </>
+            <div className="mt-6 flex items-center justify-between">
+              <Button variant="ghost" disabled={step === 0} onClick={() => setStep((s) => s - 1)}>
+                <ArrowLeft className="size-4" /> Back
+              </Button>
+              {step < 3 ? (
+                <Button disabled={step === 0} onClick={() => setStep((s) => s + 1)} className="gap-2">
+                  Continue <ArrowRight className="size-4" />
+                </Button>
               ) : (
-                <>Build My Business Plan <ArrowRight className="size-4" /></>
+                <Button onClick={finish} className="gap-2">
+                  Build My Business Plan <ArrowRight className="size-4" />
+                </Button>
               )}
-            </Button>
-          )}
-        </div>
+            </div>
+          </>
+        )}
       </main>
     </div>
   );

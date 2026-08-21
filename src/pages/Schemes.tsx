@@ -76,6 +76,25 @@ export default function Schemes() {
 
                 <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">{m.scheme.description}</p>
 
+                {/* Match strength verdict — deterministic, then explained */}
+                <div
+                  className={cn(
+                    "mt-3 rounded-xl px-3.5 py-2.5 text-xs leading-relaxed",
+                    m.matchPct >= 75
+                      ? "bg-emerald-500/8 text-emerald-800 ring-1 ring-emerald-600/20"
+                      : m.matchPct >= 50
+                        ? "bg-amber-500/10 text-amber-800 ring-1 ring-amber-600/25"
+                        : "bg-rose-500/8 text-rose-800 ring-1 ring-rose-600/20",
+                  )}
+                >
+                  <strong className="font-bold">
+                    {m.matchPct >= 75 ? "Strong match:" : m.matchPct >= 50 ? "Partial match:" : "Weak match:"}
+                  </strong>{" "}
+                                    {m.missingRequirements.length === 0
+                    ? "Meets all " + m.criteria.length + " criteria for your profile."
+                    : "Meets " + m.criteria.filter((c) => c.met).length + " of " + m.criteria.length + " criteria. Gap: " + m.missingRequirements[0].toLowerCase() + "."}
+                </div>
+
                 {/* Criteria */}
                 <div className="mt-4 space-y-1.5">
                   {m.criteria.map((c) => (

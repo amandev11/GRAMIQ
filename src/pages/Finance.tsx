@@ -72,6 +72,59 @@ function MetricRow({ label, before, after, format, invert = false }: {
   );
 }
 
+/**
+ * Morphing break-even timeline — the visual heart of the simulator.
+ * The payback marker glides along the 12-month track as any input changes.
+ */
+function BreakEvenTimeline({ before, after }: { before: number; after: number }) {
+  const scale = 15; // months shown on the track
+  const pos = (m: number) => `${Math.min(Math.max((Number.isFinite(m) ? m : scale) / scale, 0), 1) * 100}%`;
+  const faster = after < before;
+  return (
+    <div className="rounded-xl bg-white/55 p-4">
+      <div className="flex items-center justify-between text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+        <span>Payback timeline</span>
+        <span className={cn("tabular", Number.isFinite(after) && "text-teal-700")}>
+          {Number.isFinite(after) ? `Break-even at month ${after}` : "Not within 15 months"}
+        </span>
+      </div>
+      <div className="relative mt-3 h-11">
+        {/* Track */}
+        <div className="absolute inset-x-0 top-4 h-2.5 overflow-hidden rounded-full bg-foreground/8">
+          <motion.div
+            className="h-full rounded-full bg-gradient-to-r from-sky-500/70 to-teal-500"
+            animate={{ width: pos(after) }}
+            transition={{ type: "spring", stiffness: 120, damping: 20 }}
+          />
+        </div>
+        {/* Ghost marker = original plan */}
+        {Number.isFinite(before) && (
+          <motion.div
+            className="absolute top-6 z-0 -translate-x-1/2 text-[10px] whitespace-nowrap text-muted-foreground"
+            animate={{ left: pos(before) }}
+            transition={{ type: "spring", stiffness: 120, damping: 20 }}
+          >
+            <span className={cn("mx-auto block size-2 rounded-full ring-2", faster ? "bg-muted-foreground/40 ring-transparent" : "bg-amber-500 ring-white")} />
+            plan
+          </motion.div>
+        )}
+        {/* Live marker */}
+        <motion.div
+          className="absolute top-2 z-10 -translate-x-1/2"
+          animate={{ left: pos(after) }}
+          transition={{ type: "spring", stiffness: 120, damping: 20 }}
+        >
+          <div className="size-5 rounded-full border-[3px] border-white bg-teal-600 shadow-md" />
+        </motion.div>
+        {/* Month ticks */}
+        <div className="absolute inset-x-0 bottom-0 flex justify-between text-[9px] text-muted-foreground/70 tabular">
+          {[1, 3, 6, 9, 12, 15].map((m) => <span key={m}>M{m}</span>)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /** Standalone model editor (top-level to keep input focus stable). */
 function ModelEditor({
   financials,
@@ -248,7 +301,10 @@ export default function Finance() {
                 <MetricRow label="Profit margin" before={base.profitMarginPct} after={simRes.profitMarginPct} format={(n) => `${n}%`} />
                 <MetricRow label="Cash runway" before={base.cashRunwayMonths} after={simRes.cashRunwayMonths} format={(n) => (Number.isFinite(n) ? `${n} mo` : "Healthy")} invert />
               </div>
-              <DataBadge source="AI ESTIMATE" className="mt-4" />
+              <div className="mt-3">
+                <BreakEvenTimeline before={base.breakEvenMonths} after={simRes.breakEvenMonths} />
+              </div>
+              <DataBadge source="AI ESTIMATE" className="mt-3" />
             </GlassCard>
 
             {/* AI insight */}

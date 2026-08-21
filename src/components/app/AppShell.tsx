@@ -5,7 +5,7 @@ import {
   Scale, ShieldAlert, ShieldCheck, Sparkles, Target, X,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
-import { Navigate, NavLink, useNavigate } from "react-router";
+import { Navigate, NavLink, useLocation, useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
 import { CopilotPanel } from "./CopilotPanel";
 
@@ -20,6 +20,56 @@ const NAV = [
   { to: "/plan", label: "Action Plan", icon: Target },
   { to: "/business-plan", label: "Business Plan PDF", icon: FileText },
 ];
+
+/** The product narrative — every screen lives on one of these stages. */
+const STAGES: Array<{ key: string; icon: typeof LayoutDashboard; paths: string[] }> = [
+  { key: "UNDERSTAND", icon: LayoutDashboard, paths: ["/dashboard"] },
+  { key: "ANALYZE", icon: MapPinned, paths: ["/blueprint", "/market", "/risks"] },
+  { key: "SIMULATE", icon: LineChart, paths: ["/finance"] },
+  { key: "OPTIMIZE", icon: Scale, paths: ["/compare"] },
+  { key: "FUND", icon: Ribbon, paths: ["/schemes"] },
+  { key: "ACT", icon: Target, paths: ["/plan", "/business-plan"] },
+];
+
+/** Slim narrative rail shown under the header — makes the app one story. */
+function JourneyRail() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const activeIdx = STAGES.findIndex((s) => s.paths.includes(location.pathname));
+
+  return (
+    <nav aria-label="Business journey" className="no-print mb-4 flex items-center gap-1 overflow-x-auto">
+      {STAGES.map(({ key, icon: Icon }, i) => {
+        const active = i === activeIdx;
+        return (
+          <div key={key} className="flex shrink-0 items-center">
+            <button
+              onClick={() => navigate(STAGES[i].paths[0])}
+              aria-current={active ? "page" : undefined}
+              className={cn(
+                "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold tracking-wider transition-all",
+                active
+                  ? "bg-gradient-to-r from-teal-600 to-sky-600 text-white shadow-md"
+                  : "text-muted-foreground hover:bg-foreground/5 hover:text-foreground",
+              )}
+            >
+              <Icon className="size-3.5" />
+              {key}
+            </button>
+            {i < STAGES.length - 1 && (
+              <span
+                className={cn(
+                  "mx-0.5 h-px w-4 transition-colors sm:w-6",
+                  i < activeIdx ? "bg-teal-500/70" : "bg-border",
+                )}
+              />
+            )}
+          </div>
+        );
+      })}
+    </nav>
+  );
+}
 
 export function AppShell({ children, title }: { children: ReactNode; title?: string }) {
   const { profile, hasBusiness, isDemo } = useBusiness();
@@ -148,7 +198,10 @@ export function AppShell({ children, title }: { children: ReactNode; title?: str
           </div>
         )}
 
-        <main className="min-w-0 flex-1 pb-24">{children}</main>
+        <main className="min-w-0 flex-1 pb-24">
+          <JourneyRail />
+          {children}
+        </main>
       </div>
 
       {/* Floating copilot button (mobile) */}

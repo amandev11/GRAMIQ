@@ -5,25 +5,52 @@ import { useBusiness } from "@/context/BusinessProvider";
 import { computeFinancials, formatInr, project12Months } from "@/lib/finance/engine";
 import { computeRisks } from "@/lib/intelligence/scores";
 import { matchSchemes } from "@/lib/intelligence/schemes";
-import { Download } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
+import { CheckCircle2, Download, FileText } from "lucide-react";
 import {
   Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
+import { useEffect, useState, type ReactNode } from "react";
+import { cn } from "@/lib/utils";
 
-function PlanSection({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
+function PlanSection({ n, title, children }: { n: number; title: string; children: ReactNode }) {
+  const reduced = useReducedMotion();
   return (
-    <section className="print-page mt-8 break-inside-avoid">
+    <motion.section
+      className="print-page mt-8 break-inside-avoid"
+      initial={reduced ? false : { opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: reduced ? 0 : 1.5 + n * 0.09, duration: 0.4 }}
+    >
       <h2 className="flex items-baseline gap-3 font-display text-xl font-bold">
         <span className="text-sm text-teal-700 tabular">{String(n).padStart(2, "0")}</span>
         {title}
       </h2>
       <div className="mt-3 text-sm leading-relaxed text-foreground/85">{children}</div>
-    </section>
+    </motion.section>
   );
 }
 
+/** Document assembly steps — shown while the plan is compiled (values are real). */
+const ASSEMBLY_STEPS = [
+  "Compiling financial model",
+  "Rendering 12-month projections",
+  "Matching funding options",
+  "Formatting document",
+];
+
 export default function BusinessPlan() {
   const { profile, financials, actionItems } = useBusiness();
+  const reduced = useReducedMotion();
+  // Assembly sequence: real compilation steps, ~1.4s, then the document reveals.
+  const [step, setStep] = useState(reduced ? ASSEMBLY_STEPS.length : -1);
+  useEffect(() => {
+    if (reduced) return;
+    const timers = ASSEMBLY_STEPS.map((_, i) => window.setTimeout(() => setStep(i), i * 350));
+    return () => timers.forEach(clearTimeout);
+  }, [reduced]);
+  const assembling = step < ASSEMBLY_STEPS.length - 1;
+
   if (!profile) return null;
   const fin = computeFinancials(financials);
   const projection = project12Months(financials);
@@ -33,6 +60,37 @@ export default function BusinessPlan() {
   return (
     <AppShell title="Business Plan PDF">
       <div className="mx-auto max-w-4xl">
+        {/* Assembly overlay */}
+        {assembling && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 z-40 flex items-center justify-center bg-background/70 backdrop-blur-sm no-print">
+            <GlassCard className="w-80 p-6">
+              <div className="flex items-center gap-3">
+                <motion.span
+                  animate={{ rotate: 360 }}
+                  transition={{ repeat: Infinity, duration: 1.6, ease: "linear" }}
+                  className="flex size-10 items-center justify-center rounded-xl bg-gradient-to-br from-teal-500 to-sky-600 text-white"
+                >
+                  <FileText className="size-5" />
+                </motion.span>
+                <p className="font-display font-bold">Assembling your plan…</p>
+              </div>
+              <ul className="mt-4 space-y-2 text-sm">
+                {ASSEMBLY_STEPS.map((s, i) => (
+                  <li key={s} className={i <= step ? "flex items-center gap-2 text-foreground" : "flex items-center gap-2 text-muted-foreground/50"}>
+                    {i < step ? (
+                      <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
+                    ) : (
+                      <span className={cn("size-4 shrink-0 rounded-full border-2", i === step ? "animate-pulse border-teal-600 border-t-transparent" : "border-foreground/20")} style={{ animationDuration: "0.9s" }} />
+                    )}
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            </GlassCard>
+          </motion.div>
+        )}
+
+        {/* Toolbar */}
         {/* Toolbar */}
         <div className="no-print mb-6 flex flex-wrap items-center justify-between gap-3">
           <div>

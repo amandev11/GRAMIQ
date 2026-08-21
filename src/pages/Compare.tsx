@@ -16,6 +16,21 @@ export default function Compare() {
   const cmp = compareBusinesses();
   const best = cmp.candidates[cmp.recommendationIndex];
 
+  // Decision trace: where does the winner beat the runner-up, by how much?
+  const runnerUpIdx = cmp.totals
+    .map((t, i) => ({ t, i }))
+    .filter(({ i }) => i !== cmp.recommendationIndex)
+    .sort((a, b) => b.t - a.t)[0].i;
+  const deciding = cmp.factors
+    .map((f) => ({
+      label: f.label,
+      delta: f.scores[cmp.recommendationIndex] - f.scores[runnerUpIdx],
+      win: f.scores[cmp.recommendationIndex],
+      lose: f.scores[runnerUpIdx],
+    }))
+    .sort((a, b) => b.delta - a.delta)
+    .slice(0, 3);
+
   return (
     <AppShell title="Compare Ideas">
       <div className="space-y-6">
@@ -33,6 +48,35 @@ export default function Compare() {
               <p className="text-xs font-bold tracking-widest text-teal-700 uppercase">Recommendation</p>
               <h2 className="mt-1 font-display text-xl font-bold sm:text-2xl">{best.name}</h2>
               <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-muted-foreground">{cmp.recommendation}</p>
+              {/* Decision trace — the three factors that decided it */}
+              <div className="mt-4 space-y-2">
+                <p className="text-[11px] font-bold tracking-widest text-muted-foreground uppercase">
+                  Why it beats {cmp.candidates[runnerUpIdx].name.split(" (")[0]}
+                </p>
+                {deciding.map((d, i) => (
+                  <motion.div
+                    key={d.label}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.25 + i * 0.12 }}
+                    className="flex items-center gap-3 text-xs"
+                  >
+                    <span className="w-32 shrink-0 font-semibold sm:w-36">{d.label}</span>
+                    <span className="w-7 text-right tabular text-muted-foreground">{d.win}</span>
+                    <span className="text-teal-600">›</span>
+                    <span className="w-7 tabular text-muted-foreground">{d.lose}</span>
+                    <div className="h-1.5 min-w-10 flex-1 overflow-hidden rounded-full bg-foreground/8">
+                      <motion.div
+                        className="h-full rounded-full bg-teal-600"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${Math.max(Math.min(d.delta * 2.5, 100), 3)}%` }}
+                        transition={{ delay: 0.35 + i * 0.12, duration: 0.5 }}
+                      />
+                    </div>
+                    <span className="w-10 text-right font-bold tabular text-teal-700">+{d.delta}</span>
+                  </motion.div>
+                ))}
+              </div>
             </div>
             <Button variant="outline" className="glass shrink-0 rounded-full" onClick={() => navigate("/blueprint")}>
               Open your blueprint
