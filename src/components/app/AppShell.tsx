@@ -2,7 +2,7 @@ import { useBusiness } from "@/context/BusinessProvider";
 import { cn } from "@/lib/utils";
 import {
   Bot, Building2, FileText, LayoutDashboard, LineChart, MapPinned, Menu, Ribbon,
-  ShieldAlert, Sparkles, Target, X,
+  Scale, ShieldAlert, ShieldCheck, Sparkles, Target, X,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Navigate, NavLink, useNavigate } from "react-router";
@@ -13,6 +13,7 @@ const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/blueprint", label: "Blueprint", icon: Building2 },
   { to: "/finance", label: "Finance & Simulator", icon: LineChart },
+  { to: "/compare", label: "Compare Ideas", icon: Scale },
   { to: "/market", label: "Local Market", icon: MapPinned },
   { to: "/schemes", label: "Funding & Schemes", icon: Ribbon },
   { to: "/risks", label: "Risk Radar", icon: ShieldAlert },
@@ -120,6 +121,13 @@ export function AppShell({ children, title }: { children: ReactNode; title?: str
             >
               <FileText className="size-4" />
               Knowledge Admin
+            </NavLink>
+            <NavLink
+              to="/trust"
+              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-emerald-800/70 transition-colors hover:bg-emerald-600/8 hover:text-emerald-800"
+            >
+              <ShieldCheck className="size-4" />
+              Trust Center
             </NavLink>
           </div>
         </aside>

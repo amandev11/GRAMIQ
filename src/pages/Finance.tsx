@@ -50,16 +50,23 @@ function MetricRow({ label, before, after, format, invert = false }: {
   return (
     <div className="flex items-center justify-between rounded-xl bg-white/55 px-4 py-3">
       <span className="text-sm font-medium">{label}</span>
-      <div className="flex items-center gap-3 tabular">
-        <span className="text-sm text-muted-foreground line-through decoration-foreground/30">{format(before)}</span>
+      <div className="flex items-center gap-2.5 tabular">
+        {diff !== 0 && (
+          <span className="rounded-full bg-foreground/6 px-2 py-0.5 text-[11px] text-muted-foreground">was {format(before)}</span>
+        )}
         <motion.span
           key={after}
-          initial={{ opacity: 0.4, y: -3 }}
+          initial={diff !== 0 ? { opacity: 0.4, y: -3 } : false}
           animate={{ opacity: 1, y: 0 }}
-          className={cn("font-display text-base font-bold", diff === 0 ? "" : good ? "text-emerald-600" : "text-rose-600")}
+          className={cn("font-display text-base font-bold", diff === 0 ? "text-foreground/80" : good ? "text-emerald-600" : "text-rose-600")}
         >
           {format(after)}
         </motion.span>
+        {diff !== 0 && (
+          <span className={cn("w-16 text-right text-[11px] font-semibold", good ? "text-emerald-600/80" : "text-rose-600/80")}>
+            {diff > 0 ? "+" : ""}{format(diff)}
+          </span>
+        )}
       </div>
     </div>
   );

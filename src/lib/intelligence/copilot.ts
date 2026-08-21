@@ -1,15 +1,29 @@
 /**
  * Copilot brain — answers questions using the LIVE financial model.
- * Every answer is grounded in deterministic engine output; the copilot
- * explains and compares, it never does its own arithmetic.
+ * Answers are STRUCTURED: headline + metric deltas + calculation steps +
+ * short narration. Every number comes from the deterministic engine.
  */
 import { applyScenario, computeFinancials, formatInr, SCENARIOS } from "@/lib/finance/engine";
 import { computeRisks } from "@/lib/intelligence/scores";
 import { matchSchemes } from "@/lib/intelligence/schemes";
 import type { EntrepreneurProfile, FinancialInputs } from "@/lib/types";
 
+export interface CopilotMetric {
+  label: string;
+  before: string;
+  after: string;
+}
+
+export interface CalcStep {
+  expression: string;
+  note: string;
+}
+
 export interface CopilotAnswer {
+  headline: string;
   text: string;
+  metrics?: CopilotMetric[];
+  calcSteps?: CalcStep[];
   chips: string[];
   source: "AI ESTIMATE" | "DEMO DATA";
 }
@@ -28,8 +42,9 @@ export function answerQuestion(
     const high = risks.filter((r) => r.level === "HIGH");
     const top = high[0] ?? risks[0];
     return {
-      text: `Your biggest risk right now is "${top.title}" (${top.level}).\n\nWhy: ${top.why}\n\nImpact: ${top.impact}\n\nMitigation: ${top.mitigation}\n\nYou have ${high.length} HIGH risk(s) and ${risks.filter((r) => r.level === "MEDIUM").length} MEDIUM risk(s) on the Risk Radar.`,
-      chips: ["Open Risk Radar", "Run stress test", "How do I reduce this?"],
+      headline: `Biggest risk: ${top.title} (${top.level})`,
+      text: `${top.why}\n\nImpact — ${top.impact}\nMitigation — ${top.mitigation}\n\nYour radar shows ${high.length} HIGH and ${risks.filter((r) => r.level === "MEDIUM").length} MEDIUM risk(s).`,
+      chips: ["Open Risk Radar", "Run stress test", "Show Calculation"],
       source: "AI ESTIMATE",
     };
   }
@@ -46,12 +61,13 @@ export function answerQuestion(
     const delta = target - inputs.equipmentCost - inputs.inventoryCost;
     if (delta === 0) {
       return {
-        text: `Your current equipment + stock investment is already ${formatInr(target)}. Tell me a different target and I'll simulate it.`,
-        chips: ["Show calculation", "Run stress test"],
+        headline: "You're already investing that amount",
+        text: `Your equipment + stock investment is ${formatInr(target)}. Give me a different target and I'll simulate it.`,
+        chips: ["Simulate +₹50,000", "Show my break-even"],
         source: "AI ESTIMATE",
       };
     }
-    // Simulate: extra capital buys more cooling/storage → assume +6% volume per ₹10k invested (AI ESTIMATE)
+    // Simulate: extra capital buys cooling/storage → +6% volume per ₹10k (AI ESTIMATE)
     const scaled: FinancialInputs = {
       ...inputs,
       equipmentCost: inputs.equipmentCost + Math.max(delta, 0),
@@ -59,8 +75,36 @@ export function answerQuestion(
     };
     const sim = computeFinancials(scaled);
     return {
-      text: `I simulated raising investment to ${formatInr(target)}.\n\nCurrent plan:\n• Investment ${formatInr(inputs.equipmentCost + inputs.inventoryCost)}\n• Monthly profit ${formatInr(base.operatingProfit)}\n• Break-even ${base.breakEvenMonths} months\n\nProposed:\n• Investment ${formatInr(scaled.equipmentCost + scaled.inventoryCost)}\n• Monthly profit ${formatInr(sim.operatingProfit)}\n• Break-even ${sim.breakEvenMonths} months\n\nRecommendation: increase investment only if you can add at least ${formatInr(Math.max(sim.breakEvenUnits - base.breakEvenUnits, 0))} L of monthly sales. Otherwise keep the buffer as working capital.`,
-      chips: ["Simulate", "Compare", "Show Calculation"],
+      headline: `Simulated: investing ${formatInr(target)}`,
+      metrics: [
+        { label: "Monthly profit", before: formatInr(base.operatingProfit), after: formatInr(sim.operatingProfit) },
+        { label: "Break-even", before: `${base.breakEvenMonths} mo`, after: `${sim.breakEvenMonths} mo` },
+        { label: "Margin", before: `${base.profitMarginPct}%`, after: `${sim.profitMarginPct}%` },
+      ],
+      text: `Extra capacity adds ${formatInr(sim.monthlyRevenue - base.monthlyRevenue)}/month in revenue, but your payback stretches.\n\nRecommendation: increase only if you can add at least ${formatInr(Math.max(sim.breakEvenUnits - base.breakEvenUnits, 0))} of monthly sales. Otherwise keep the money as working capital.`,
+      calcSteps: [
+        { expression: `+${formatInr(delta)} invested → +${(Math.max(delta, 0) / 10000) * 0.06 * 100 | 0}% volume (₹6k capacity per ₹10k)`, note: "Modeled capacity assumption" },
+        { expression: `Break-even: ${formatInr(sim.monthlyFixedCost)} ÷ ₹${sim.contributionPerUnit}/L = ${sim.breakEvenUnits.toLocaleString("en-IN")} L/mo`, note: "Fixed costs ÷ contribution per unit" },
+      ],
+      chips: ["Open Simulator", "Compare", "What is my biggest risk?"],
+      source: "AI ESTIMATE",
+    };
+  }
+
+  // calculation walkthrough
+  if (q.includes("calculation") || q.includes("show the math") || q.includes("how did you")) {
+    return {
+      headline: "The math behind your plan",
+      calcSteps: [
+        { expression: `EMI = ${formatInr(base.emi)}`, note: "P·r·(1+r)ⁿ / ((1+r)ⁿ−1) on a reducing balance" },
+        { expression: `Fixed costs = ${formatInr(base.monthlyFixedCost)}/mo`, note: `Labor ${formatInr(inputs.labor)} + utilities ${formatInr(inputs.utilities)} + other ${formatInr(inputs.otherMonthlyCost)} + EMI ${formatInr(base.emi)}` },
+        { expression: `Contribution = ₹${inputs.sellingPricePerUnit} − ₹${inputs.rawMaterialPerUnit} = ₹${base.contributionPerUnit}/L`, note: "Sell price minus buy price" },
+        { expression: `Break-even = ${formatInr(base.monthlyFixedCost)} ÷ ₹${base.contributionPerUnit} = ${base.breakEvenUnits.toLocaleString("en-IN")} L/mo`, note: "Fixed costs ÷ contribution per unit" },
+        { expression: `Monthly profit = ${formatInr(base.monthlyRevenue)} − ${formatInr(base.monthlyVariableCost)} − ${formatInr(base.monthlyFixedCost)} = ${formatInr(base.operatingProfit)}`, note: "Revenue − variable − fixed" },
+        { expression: `Break-even period ≈ ${base.breakEvenMonths} mo`, note: `(${formatInr(base.totalStartupCost)} startup + half working capital) ÷ ${formatInr(base.operatingProfit)}/mo` },
+      ],
+      text: "Every figure on every page comes from these exact formulas. Change any input in the model and they recompute instantly.",
+      chips: ["Open Simulator", "What if milk price falls?"],
       source: "AI ESTIMATE",
     };
   }
@@ -68,7 +112,16 @@ export function answerQuestion(
   // break-even
   if (q.includes("break-even") || q.includes("breakeven") || q.includes("break even")) {
     return {
-      text: `Your break-even:\n\n• ${base.breakEvenUnits.toLocaleString("en-IN")} litres/month (you plan ${inputs.unitsPerMonth.toLocaleString("en-IN")} L)\n• ${formatInr(base.breakEvenRevenue)} monthly revenue\n• ~${base.breakEvenMonths} months to recover your ${formatInr(base.totalStartupCost)} startup cost\n\nCalculation: fixed costs ${formatInr(base.monthlyFixedCost)} ÷ margin ₹${base.contributionPerUnit}/L = ${base.breakEvenUnits.toLocaleString("en-IN")} L.`,
+      headline: `You break even at ${base.breakEvenUnits.toLocaleString("en-IN")} L/month`,
+      metrics: [
+        { label: "Break-even revenue", before: "—", after: formatInr(base.breakEvenRevenue) },
+        { label: "Planned volume", before: "—", after: `${inputs.unitsPerMonth.toLocaleString("en-IN")} L` },
+        { label: "Payback period", before: "—", after: `${base.breakEvenMonths} mo` },
+      ],
+      text: `Your safety cushion is ${Math.max(inputs.unitsPerMonth - base.breakEvenUnits, 0).toLocaleString("en-IN")} L/month (${Math.round((1 - base.breakEvenUnits / inputs.unitsPerMonth) * 100)}% headroom) before you start losing money.`,
+      calcSteps: [
+        { expression: `${formatInr(base.monthlyFixedCost)} ÷ ₹${base.contributionPerUnit}/L = ${base.breakEvenUnits.toLocaleString("en-IN")} L/mo`, note: "Fixed costs ÷ contribution per unit" },
+      ],
       chips: ["Show Calculation", "What if milk price falls?"],
       source: "AI ESTIMATE",
     };
@@ -78,7 +131,13 @@ export function answerQuestion(
   if (q.includes("milk price") || q.includes("price fall") || q.includes("price drop")) {
     const stress = computeFinancials(applyScenario(inputs, SCENARIOS.stress.adj));
     return {
-      text: `If selling price drops 10% and volumes fall 35% (stress case):\n\n• Revenue: ${formatInr(base.monthlyRevenue)} → ${formatInr(stress.monthlyRevenue)}\n• Profit: ${formatInr(base.operatingProfit)} → ${formatInr(stress.operatingProfit)}\n• Break-even: ${base.breakEvenMonths} → ${stress.breakEvenMonths} months\n\nYour business becomes sensitive below ₹${(inputs.sellingPricePerUnit * 0.93).toFixed(0)}/L. Consider direct household sales or fixed-rate tea-stall contracts to protect price.`,
+      headline: "Stress test: −10% price, −35% volume",
+      metrics: [
+        { label: "Revenue", before: formatInr(base.monthlyRevenue), after: formatInr(stress.monthlyRevenue) },
+        { label: "Profit", before: formatInr(base.operatingProfit), after: formatInr(stress.operatingProfit) },
+        { label: "Break-even", before: `${base.breakEvenMonths} mo`, after: `${stress.breakEvenMonths} mo` },
+      ],
+      text: `Your business becomes sensitive below ₹${(inputs.sellingPricePerUnit * 0.93).toFixed(0)}/L. Protect price with direct household sales and fixed-rate tea-stall contracts instead of matching competitor cuts.`,
       chips: ["Open Simulator", "Compare scenarios"],
       source: "AI ESTIMATE",
     };
@@ -89,9 +148,10 @@ export function answerQuestion(
     const matches = matchSchemes(profile, base.totalStartupCost);
     const top = matches.filter((m) => m.matchPct >= 60).slice(0, 3);
     return {
-      text: `Top scheme matches for your profile (deterministic eligibility filter, then AI explanation):\n\n${top
-        .map((m, i) => `${i + 1}. ${m.scheme.name} — ${m.matchPct}% match (${m.scheme.type}, ${m.scheme.source.status})`)
-        .join("\n")}\n\nNote: these are DEMO database entries for the prototype — verify with the district office before applying. Open Funding & Schemes to see per-criterion eligibility.`,
+      headline: `${top.length} scheme matches above 60%`,
+      text: top
+        .map((m, i) => `${i + 1}. ${m.scheme.name} — ${m.matchPct}% (${m.scheme.type})`)
+        .join("\n") + "\n\nThese are DEMO database entries — verify at the district office before applying. The eligibility filter is deterministic; I only explain it.",
       chips: ["Open Funding & Schemes", "What documents do I need?"],
       source: "DEMO DATA",
     };
@@ -100,7 +160,14 @@ export function answerQuestion(
   // profit / how am I doing
   if (q.includes("profit") || q.includes("earning")) {
     return {
-      text: `At your current plan:\n\n• Monthly revenue ${formatInr(base.monthlyRevenue)}\n• Variable cost ${formatInr(base.monthlyVariableCost)}\n• Fixed cost (incl. EMI) ${formatInr(base.monthlyFixedCost)}\n• Operating profit ${formatInr(base.operatingProfit)} (${base.profitMarginPct}% margin)\n• Annual profit ${formatInr(base.annualProfit)}\n\nEvery ₹1/L added to your selling price adds about ${formatInr(inputs.unitsPerMonth)}/month to profit.`,
+      headline: `${formatInr(base.operatingProfit)}/month at ${base.profitMarginPct}% margin`,
+      metrics: [
+        { label: "Revenue", before: "—", after: formatInr(base.monthlyRevenue) },
+        { label: "Variable cost", before: "—", after: formatInr(base.monthlyVariableCost) },
+        { label: "Fixed cost", before: "—", after: formatInr(base.monthlyFixedCost) },
+        { label: "Annual profit", before: "—", after: formatInr(base.annualProfit) },
+      ],
+      text: `Every ₹1/L added to your selling price adds about ${formatInr(inputs.unitsPerMonth)}/month to profit — the single most powerful lever in your model.`,
       chips: ["Show Calculation", "Open Simulator"],
       source: "AI ESTIMATE",
     };
@@ -109,7 +176,8 @@ export function answerQuestion(
   // documents
   if (q.includes("document") || q.includes("paper")) {
     return {
-      text: `For the top demo scheme matches you would typically need:\n\n• Aadhaar ID and PAN card\n• Bank passbook / 6-month statements\n• Land or shed ownership proof (or NOC)\n• A short project report — your GRAMIQ Business Plan PDF works as a draft\n\nThese are DEMO requirements from the prototype knowledge base; confirm the exact list at the district office.`,
+      headline: "Documents you'd typically need",
+      text: "• Aadhaar ID and PAN card\n• Bank passbook / 6-month statements\n• Land or shed ownership proof (or NOC)\n• Project report — your GRAMIQ Business Plan PDF works as a draft\n\nThese are DEMO requirements; confirm the exact list at the district office.",
       chips: ["Open Funding & Schemes", "Generate Business Plan"],
       source: "DEMO DATA",
     };
@@ -117,8 +185,14 @@ export function answerQuestion(
 
   // default: grounded status summary
   return {
-    text: `Here's where your business stands:\n\n• Monthly profit: ${formatInr(base.operatingProfit)} (${base.profitMarginPct}% margin)\n• Break-even: ${base.breakEvenUnits.toLocaleString("en-IN")} L/month, ~${base.breakEvenMonths} months\n• Startup cost: ${formatInr(base.totalStartupCost)} against ${formatInr(profile.capital)} capital\n• Biggest risk: ${risks[0].title} (${risks[0].level})\n\nAsk me about your profit, risks, break-even, schemes — or ask "what if I invest ₹1.5 lakh?" and I'll simulate it.`,
-    chips: ["What is my biggest risk?", "What if I invest ₹1.5 lakh?", "Show my break-even"],
+    headline: "Your business at a glance",
+    metrics: [
+      { label: "Monthly profit", before: "—", after: formatInr(base.operatingProfit) },
+      { label: "Break-even", before: "—", after: `${base.breakEvenMonths} mo` },
+      { label: "Startup cost", before: "—", after: formatInr(base.totalStartupCost) },
+    ],
+    text: `Biggest risk: ${risks[0].title} (${risks[0].level}).\n\nAsk about your profit, risks, break-even or schemes — or say "what if I invest ₹1.5 lakh?" and I'll simulate it.`,
+    chips: ["What is my biggest risk?", "Show my break-even", "Show Calculation"],
     source: "AI ESTIMATE",
   };
 }

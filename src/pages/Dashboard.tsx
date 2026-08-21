@@ -9,10 +9,18 @@ import { computeScores } from "@/lib/intelligence/scores";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import {
-  ChevronDown, HandCoins, PiggyBank, Sparkles, TrendingUp,
+  ChevronDown, HandCoins, PiggyBank, Route, Sparkles, TrendingUp,
 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
+
+const DEMO_JOURNEY = [
+  { step: 1, label: "Your blueprint", desc: "The AI-built plan", to: "/blueprint" },
+  { step: 2, label: "Simulate a decision", desc: "Live what-if engine", to: "/finance" },
+  { step: 3, label: "Local market", desc: "Your village, mapped", to: "/market" },
+  { step: 4, label: "Funding matches", desc: "Transparent eligibility", to: "/schemes" },
+  { step: 5, label: "Business plan PDF", desc: "Bank-ready output", to: "/business-plan" },
+];
 
 function greeting() {
   const h = new Date().getHours();
@@ -39,11 +47,38 @@ export default function Dashboard() {
           desc={`Your ${profile.businessIdea.split("—")[0].trim().toLowerCase()} plan is ready. Here's where you stand today.`}
           badge={<DemoBanner isDemo={isDemo} />}
           action={
-            <Button onClick={() => navigate("/blueprint")} className="gap-2 rounded-full">
-              <Sparkles className="size-4" /> Open Blueprint
+            <Button variant="outline" className="glass gap-2 rounded-full" onClick={() => navigate("/compare")}>
+              <Sparkles className="size-4" /> Compare ideas
             </Button>
           }
         />
+
+        {/* Demo journey — guided 3-minute story (demo mode only) */}
+        {isDemo && (
+          <GlassCard className="p-4 sm:p-5">
+            <div className="flex items-center gap-2">
+              <Route className="size-4 text-teal-700" />
+              <p className="text-xs font-bold tracking-widest text-teal-700 uppercase">The 3-minute story</p>
+            </div>
+            <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+              {DEMO_JOURNEY.map(({ step, label, desc, to }) => (
+                <button
+                  key={to}
+                  onClick={() => navigate(to)}
+                  className="glass glass-hover group flex min-w-44 shrink-0 items-center gap-3 rounded-2xl p-3 text-left"
+                >
+                  <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-teal-500 to-sky-600 text-xs font-bold text-white">
+                    {step}
+                  </span>
+                  <span>
+                    <span className="block text-sm font-semibold group-hover:text-teal-700">{label}</span>
+                    <span className="block text-[11px] text-muted-foreground">{desc}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </GlassCard>
+ )}
 
         {/* Snapshot + score */}
         <div className="grid gap-4 lg:grid-cols-[1fr_auto]">
@@ -77,7 +112,13 @@ export default function Dashboard() {
 
         {/* Score breakdown */}
         <GlassCard className="p-5 sm:p-6">
-          <h3 className="font-display text-lg font-bold">Business Health Breakdown</h3>
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h3 className="font-display text-lg font-bold">Business Health Breakdown</h3>
+            <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <DataBadge source="AI ESTIMATE" />
+              Overall = equal-weight mean of the five factor scores, each derived from your model inputs.
+            </p>
+          </div>
           <div className="mt-4 space-y-1.5">
             {scores.breakdown.map((b) => (
               <div key={b.key}>

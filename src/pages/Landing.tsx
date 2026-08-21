@@ -19,34 +19,40 @@ const PIPELINE = [
 
 const FEATURES = [
   {
-    icon: Bot,
-    title: "AI Business Advisor",
-    desc: "Seven specialist analysts — business, financial, market, risk, scheme, planning — working as one copilot grounded in your real numbers.",
+    icon: LineChart,
+    title: "A financial engine, not a guess",
+    desc: "EMI, break-even, ROI and 12-month projections come from open formulas you can inspect line by line. The AI explains the math — it never performs it.",
+    span: "lg:col-span-2",
   },
   {
-    icon: LineChart,
-    title: "Financial Intelligence",
-    desc: "A deterministic calculation engine: EMI, break-even, ROI, cash runway and 12-month projections you can verify line by line.",
+    icon: Bot,
+    title: "Seven specialists, one copilot",
+    desc: "Business, financial, market, risk, scheme and planning analysts produce structured answers grounded in your live model.",
+    span: "",
   },
   {
     icon: MapPinned,
-    title: "Hyper-Local Insights",
-    desc: "Nearby markets, suppliers, competitors and opportunity zones mapped for your village — not generic national averages.",
+    title: "Hyper-local, not generic",
+    desc: "Markets, suppliers, competitors and opportunity zones for your village — scores that move when your plan moves.",
+    span: "",
   },
   {
     icon: Ribbon,
-    title: "Scheme Discovery",
-    desc: "A transparent eligibility filter matches your profile against schemes, showing every criterion, document and source.",
+    title: "Scheme discovery with receipts",
+    desc: "A deterministic eligibility filter shows every criterion, document, source and verification date before the AI says a word.",
+    span: "",
   },
   {
     icon: Mic,
-    title: "Voice-First Access",
-    desc: "Speak your idea in Hindi, English or Hinglish. GRAMIQ extracts the numbers and asks only the questions that matter.",
+    title: "Voice-first",
+    desc: "Speak your idea in Hindi, English or Hinglish — GRAMIQ extracts the numbers and asks only what's missing.",
+    span: "",
   },
   {
     icon: FileText,
-    title: "Business Plan Generator",
-    desc: "A professional, bank-ready business plan PDF with projections, risk analysis and funding options in one click.",
+    title: "Idea in, bank-ready plan out",
+    desc: "A professional 10-section business plan PDF with projections, risks and funding options — generated in one click from your live model.",
+    span: "lg:col-span-2",
   },
 ];
 
@@ -177,28 +183,50 @@ export default function Landing() {
         </motion.div>
       </section>
 
-      {/* Features */}
+      {/* Features — asymmetric bento */}
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-8">
         <motion.div {...fadeUp} className="text-center">
           <h2 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">Why GRAMIQ</h2>
           <p className="mx-auto mt-3 max-w-lg text-sm text-muted-foreground sm:text-base">
-            Not a chatbot — a complete decision-support system that takes you from
-            "I want to start a business" to a funded, planned, actionable venture.
+            Not a chatbot — a decision-support system that takes you from
+            "I want to start a business" to a funded, planned venture.
           </p>
         </motion.div>
         <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {FEATURES.map(({ icon: Icon, title, desc }, i) => (
-            <motion.div key={title} {...fadeUp} transition={{ ...fadeUp.transition, delay: i * 0.06 }}>
-              <GlassCard hover className="h-full p-6">
-                <span className="flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-500/15 to-sky-600/15 text-teal-700 ring-1 ring-teal-600/20">
-                  <Icon className="size-5" />
-                </span>
+          {FEATURES.map(({ icon: Icon, title, desc, span }, i) => (
+            <motion.div key={title} {...fadeUp} transition={{ ...fadeUp.transition, delay: i * 0.05 }} className={span}>
+              <GlassCard hover className="flex h-full flex-col p-6">
+                <div className="flex items-center justify-between">
+                  <span className="flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-500/15 to-sky-600/15 text-teal-700 ring-1 ring-teal-600/20">
+                    <Icon className="size-5" />
+                  </span>
+                  <span className="font-display text-3xl font-extrabold text-foreground/6">{String(i + 1).padStart(2, "0")}</span>
+                </div>
                 <h3 className="mt-4 font-display text-lg font-bold">{title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{desc}</p>
               </GlassCard>
             </motion.div>
           ))}
         </div>
+
+        {/* Provenance legend */}
+        <motion.div {...fadeUp} transition={{ ...fadeUp.transition, delay: 0.1 }} className="mt-6">
+          <GlassCard className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 px-6 py-4">
+            <span className="text-xs font-bold tracking-widest text-muted-foreground uppercase">Every number is labeled</span>
+            <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700">
+              <span className="size-2 rounded-full bg-emerald-500" /> VERIFIED SOURCE
+            </span>
+            <span className="flex items-center gap-1.5 text-xs font-semibold text-sky-700">
+              <span className="size-2 rounded-full bg-sky-500" /> AI ESTIMATE
+            </span>
+            <span className="flex items-center gap-1.5 text-xs font-semibold text-amber-700">
+              <span className="size-2 rounded-full bg-amber-500" /> DEMO DATA
+            </span>
+            <button onClick={() => navigate("/trust")} className="text-xs font-semibold text-teal-700 underline-offset-2 hover:underline">
+              How we handle trust →
+            </button>
+          </GlassCard>
+        </motion.div>
       </section>
 
       {/* Trust strip */}

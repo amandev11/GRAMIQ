@@ -25,6 +25,8 @@ const Plan = lazy(() => import("./pages/Plan.tsx"));
 const BusinessPlan = lazy(() => import("./pages/BusinessPlan.tsx"));
 const Admin = lazy(() => import("./pages/Admin.tsx"));
 const JudgesMode = lazy(() => import("./pages/JudgesMode.tsx"));
+const Compare = lazy(() => import("./pages/Compare.tsx"));
+const Trust = lazy(() => import("./pages/Trust.tsx"));
 
 // Simple loading fallback for route transitions
 function RouteLoading() {
@@ -200,8 +202,17 @@ createRoot(document.getElementById("root")!).render(
                       </RequireAuth>
                     }
                   />
+                  <Route
+                    path="/compare"
+                    element={
+                      <RequireAuth>
+                        <Compare />
+                      </RequireAuth>
+                    }
+                  />
                   <Route path="/judges" element={<JudgesMode />} />
                   <Route path="/admin" element={<Admin />} />
+                  <Route path="/trust" element={<Trust />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>

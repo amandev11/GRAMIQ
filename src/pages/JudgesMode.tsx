@@ -177,10 +177,13 @@ export default function JudgesMode() {
             {profile && comparison && step === 6 && (
               <div className="mt-6 flex flex-wrap items-center gap-6 rounded-2xl bg-white/55 p-5 ring-1 ring-black/5">
                 <ScoreRing score={comparison.totals[comparison.recommendationIndex]} size={110} label="Best fit" />
-                <div className="text-sm leading-relaxed">
+                <div className="min-w-0 flex-1 text-sm leading-relaxed">
                   <p className="font-semibold">Live comparison engine output:</p>
                   <p className="text-muted-foreground">{comparison.recommendation}</p>
                 </div>
+                <Button variant="outline" className="glass shrink-0 rounded-full" onClick={() => navigate("/compare")}>
+                  Open scoring matrix <ArrowRight className="size-4" />
+                </Button>
               </div>
             )}
 

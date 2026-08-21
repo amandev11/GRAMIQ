@@ -1,20 +1,125 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useBusiness } from "@/context/BusinessProvider";
-import { answerQuestion } from "@/lib/intelligence/copilot";
+import { answerQuestion, type CalcStep, type CopilotMetric } from "@/lib/intelligence/copilot";
 import { cn } from "@/lib/utils";
-import { Mic, MicOff, Send, Sparkles, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
 import type { CopilotMessage } from "@/lib/types";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { ArrowDownToLine, Mic, MicOff, Send, Sparkles, Volume2, VolumeX, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { useSpeechRecognition } from "@/hooks/use-speech";
 
 const OPENING: CopilotMessage = {
   id: "opening",
   role: "assistant",
-  text: "Namaste! I'm your GRAMIQ copilot. I can see your live business model — ask me about profit, risks, break-even, schemes, or ask me to simulate a decision.",
-  chips: ["What is my biggest risk?", "What if I invest ₹1.5 lakh?", "Show my break-even", "Any schemes for me?"],
+  headline: "Namaste! I'm your GRAMIQ copilot",
+  text: "I can see your live business model. Ask about profit, risks or schemes — or say \"what if I invest ₹1.5 lakh?\" and I'll simulate it.",
+  chips: ["What is my biggest risk?", "What if I invest ₹1.5 lakh?", "Show my break-even", "Show Calculation"],
   source: "AI ESTIMATE",
 };
+
+/** Typewriter reveal for assistant answers (skipped under reduced motion). */
+function StreamedText({ text, speakLang }: { text: string; speakLang?: string }) {
+  const reduced = useReducedMotion();
+  const [len, setLen] = useState(reduced ? text.length : 0);
+  const done = len >= text.length;
+
+  useEffect(() => {
+    if (reduced || done) return;
+    const iv = window.setInterval(() => {
+      setLen((l) => {
+        if (l >= text.length) {
+          window.clearInterval(iv);
+          return l;
+        }
+        return Math.min(l + 4, text.length);
+      });
+    }, 14);
+    return () => window.clearInterval(iv);
+  }, [text, reduced, done]);
+
+  return (
+    <>
+      <span className="whitespace-pre-line">
+        {text.slice(0, len)}
+        {!done && <span className="ml-0.5 inline-block h-3.5 w-[2px] animate-pulse bg-primary align-middle" />}
+      </span>
+      {done && speakLang && <SpeakButton text={text} lang={speakLang} />}
+    </>
+  );
+}
+
+function SpeakButton({ text, lang }: { text: string; lang: string }) {
+  const [speaking, setSpeaking] = useState(false);
+  function toggle() {
+    if (!("speechSynthesis" in window)) return;
+    if (speaking) {
+      window.speechSynthesis.cancel();
+      setSpeaking(false);
+      return;
+    }
+    // Strip bullet/number prefixes for cleaner speech
+    const clean = text.replace(/^[•\-\d.\s]+/gm, "");
+    const u = new SpeechSynthesisUtterance(clean);
+    u.lang = lang;
+    u.onend = () => setSpeaking(false);
+    u.onerror = () => setSpeaking(false);
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(u);
+    setSpeaking(true);
+  }
+  useEffect(() => () => window.speechSynthesis?.cancel(), []);
+  return (
+    <button
+      onClick={toggle}
+      aria-label={speaking ? "Stop reading aloud" : "Read answer aloud"}
+      className="mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-foreground/6 hover:text-foreground"
+    >
+      {speaking ? <VolumeX className="size-3" /> : <Volume2 className="size-3" />}
+      {speaking ? "Stop" : "Listen"}
+    </button>
+  );
+}
+
+function MetricDeltas({ metrics }: { metrics: CopilotMetric[] }) {
+  return (
+    <div className={cn("grid gap-1.5", metrics.length >= 4 ? "grid-cols-2" : "grid-cols-3")}>
+      {metrics.map((m) => {
+        const changed = m.before !== m.after && m.before !== "—";
+        return (
+          <div key={m.label} className="rounded-xl bg-white/70 p-2.5 ring-1 ring-black/5">
+            <p className="text-[10px] leading-tight tracking-wide text-muted-foreground uppercase">{m.label}</p>
+            <div className="mt-1 flex items-baseline gap-1.5">
+              {changed && <span className="text-[11px] text-muted-foreground">{m.before}</span>}
+              {changed && <ArrowDownToLine className="size-3 -translate-y-0.5 rotate-[-90deg] text-muted-foreground/60" />}
+              <motion.span
+                key={m.after}
+                initial={changed ? { opacity: 0.3, y: -2 } : false}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-sm font-bold tabular"
+              >
+                {m.after}
+              </motion.span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function CalculationSteps({ steps }: { steps: CalcStep[] }) {
+  return (
+    <div className="space-y-1.5 rounded-xl bg-slate-900/95 p-3 font-mono text-[11px] leading-relaxed text-emerald-300">
+      {steps.map((s, i) => (
+        <div key={i}>
+          <p>{s.expression}</p>
+          <p className="pl-3 text-[10px] text-white/40">// {s.note}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export function CopilotPanel({
   open,
@@ -34,31 +139,60 @@ export function CopilotPanel({
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages, thinking]);
+  }, [messages.length, thinking]);
 
-  function ask(q: string) {
-    const question = q.trim();
+  function ask(qRaw: string) {
+    const question = qRaw.trim();
     if (!question || !profile) return;
     setInput("");
     setMessages((m) => [...m, { id: `u${Date.now()}`, role: "user", text: question }]);
     setThinking(true);
-    // Simulated orchestration latency for the structured answer pipeline
+    // Orchestration pipeline latency (deterministic brain responds instantly;
+    // delay preserves the conversational rhythm)
     window.setTimeout(() => {
       const ans = answerQuestion(question, profile, financials);
       setMessages((m) => [
         ...m,
-        { id: `a${Date.now()}`, role: "assistant", text: ans.text, chips: ans.chips, source: ans.source },
+        {
+          id: `a${Date.now()}`,
+          role: "assistant",
+          headline: ans.headline,
+          text: ans.text,
+          metrics: ans.metrics,
+          calcSteps: ans.calcSteps,
+          chips: ans.chips,
+          source: ans.source,
+        },
       ]);
       setThinking(false);
-    }, 650);
+    }, 600);
   }
 
-  if (!open) return null;
+  const speakLang = profile?.language === "hi" ? "hi-IN" : "en-IN";
 
   return (
-    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label="AI Copilot">
-      <div className="absolute inset-0 bg-foreground/20 backdrop-blur-sm" onClick={() => onOpenChange(false)} />
-      <div className="glass-strong absolute inset-y-0 right-0 flex w-full flex-col sm:max-w-md">
+    <div
+      className={cn("fixed inset-0 z-50", !open && "pointer-events-none")}
+      role="dialog"
+      aria-modal="true"
+      aria-label="AI Copilot"
+      aria-hidden={!open}
+      style={{ visibility: open ? "visible" : "hidden", transitionDelay: open ? "0ms" : "320ms" }}
+    >
+      <div
+        className={cn(
+          "absolute inset-0 bg-foreground/20 backdrop-blur-sm transition-opacity duration-300",
+          open ? "opacity-100" : "opacity-0",
+        )}
+        onClick={() => onOpenChange(false)}
+      />
+      <div
+        className={cn(
+          "glass-strong absolute inset-y-0 right-0 flex w-full flex-col transition-transform duration-300 ease-out sm:max-w-md",
+          open ? "translate-x-0" : "translate-x-full",
+        )}
+      >
+        {/* Header */}
         <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
           <div className="flex items-center gap-2">
             <span className="flex size-8 items-center justify-center rounded-xl bg-gradient-to-br from-teal-500 to-sky-600 text-white">
@@ -66,7 +200,10 @@ export function CopilotPanel({
             </span>
             <div>
               <p className="text-sm font-semibold">Business Copilot</p>
-              <p className="text-[11px] text-muted-foreground">Grounded in your live financial model</p>
+              <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <span className="size-1.5 animate-pulse rounded-full bg-emerald-500" />
+                Live model · {financials.unitsPerMonth.toLocaleString("en-IN")} L/mo
+              </p>
             </div>
           </div>
           <Button variant="ghost" size="icon" aria-label="Close copilot" onClick={() => onOpenChange(false)}>
@@ -74,34 +211,64 @@ export function CopilotPanel({
           </Button>
         </div>
 
+        {/* Messages */}
         <div ref={listRef} className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
-          {messages.map((m) => (
-            <div key={m.id} className={cn("flex flex-col gap-1.5", m.role === "user" ? "items-end" : "items-start")}>
-              <div
-                className={cn(
-                  "max-w-[92%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-line",
-                  m.role === "user"
-                    ? "rounded-br-md bg-primary text-primary-foreground"
-                    : "glass rounded-bl-md",
-                )}
+          <AnimatePresence initial={false}>
+            {messages.map((m) => (
+              <motion.div
+                key={m.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25 }}
+                className={cn("flex flex-col gap-2", m.role === "user" ? "items-end" : "items-start")}
               >
-                {m.text}
-              </div>
-              {m.chips && m.chips.length > 0 && (
-                <div className="flex max-w-full flex-wrap gap-1.5">
-                  {m.chips.map((chip) => (
-                    <button
-                      key={chip}
-                      onClick={() => ask(chip)}
-                      className="rounded-full border border-primary/30 bg-primary/8 px-3 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/15"
+                <div
+                  className={cn(
+                    "max-w-[94%] rounded-2xl px-3.5 py-3 text-sm",
+                    m.role === "user"
+                      ? "rounded-br-md bg-primary text-primary-foreground"
+                      : "glass w-full rounded-bl-md space-y-2.5",
+                  )}
+                >
+                  {m.role === "assistant" && (
+                    <>
+                      {m.headline && (
+                        <p className="font-display text-sm leading-snug font-bold">{m.headline}</p>
+                      )}
+                      {m.metrics && <MetricDeltas metrics={m.metrics} />}
+                      {m.calcSteps && <CalculationSteps steps={m.calcSteps} />}
+                    </>
+                  )}
+                  {m.role === "user" ? m.text : <StreamedText text={m.text} speakLang={speakLang} />}
+                  {m.role === "assistant" && m.source && (
+                    <span
+                      className={cn(
+                        "inline-block rounded-full border px-1.5 py-px text-[9px] font-bold tracking-widest uppercase",
+                        m.source === "DEMO DATA"
+                          ? "border-amber-500/30 bg-amber-400/12 text-amber-700"
+                          : "border-sky-500/25 bg-sky-400/10 text-sky-700",
+                      )}
                     >
-                      {chip}
-                    </button>
-                  ))}
+                      {m.source}
+                    </span>
+                  )}
                 </div>
-              )}
-            </div>
-          ))}
+                {m.chips && m.chips.length > 0 && (
+                  <div className="flex max-w-full flex-wrap gap-1.5">
+                    {m.chips.map((chip) => (
+                      <button
+                        key={chip}
+                        onClick={() => ask(chip)}
+                        className="rounded-full border border-primary/30 bg-primary/8 px-3 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/15"
+                      >
+                        {chip}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </motion.div>
+            ))}
+          </AnimatePresence>
           {thinking && (
             <div className="glass inline-flex items-center gap-1.5 rounded-2xl rounded-bl-md px-4 py-3">
               {[0, 1, 2].map((i) => (
@@ -115,6 +282,7 @@ export function CopilotPanel({
           )}
         </div>
 
+        {/* Composer */}
         <form
           className="flex items-center gap-2 border-t border-border/60 p-3"
           onSubmit={(e) => {
@@ -149,7 +317,7 @@ export function CopilotPanel({
           </Button>
         </form>
         <p className="px-4 pb-2 text-center text-[10px] text-muted-foreground">
-          Answers are AI ESTIMATES computed from your financial model — not guarantees.
+          Answers are AI ESTIMATES computed from your financial model — never guarantees.
         </p>
       </div>
     </div>

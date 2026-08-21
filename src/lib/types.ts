@@ -137,6 +137,9 @@ export interface CopilotMessage {
   id: string;
   role: "user" | "assistant";
   text: string;
+  headline?: string;
+  metrics?: Array<{ label: string; before: string; after: string }>;
+  calcSteps?: Array<{ expression: string; note: string }>;
   chips?: string[];
   source?: DataSource;
 }
