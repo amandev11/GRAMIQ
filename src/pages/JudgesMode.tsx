@@ -17,6 +17,7 @@ const STEPS = [
     key: "problem",
     icon: Sparkles,
     kicker: "The Problem",
+    stage: "IDEA",
     title: "Millions of micro-entrepreneurs plan blind",
     body: "A rural entrepreneur with ₹1 lakh has no access to consultants, no financial model, no scheme knowledge and no local market data. Most small ventures fail not from lack of effort — but from lack of a plan.",
   },
@@ -24,6 +25,7 @@ const STEPS = [
     key: "solution",
     icon: Bot,
     kicker: "The Solution",
+    stage: "UNDERSTAND",
     title: "GRAMIQ: a business operating system, not a chatbot",
     body: "Seven specialist AI analysts — business, financial, market, risk, scheme, planning and copilot — produce structured, schema-validated output. The chat is just one window into the intelligence engine.",
   },
@@ -31,6 +33,7 @@ const STEPS = [
     key: "finance",
     icon: LineChart,
     kicker: "Financial Engine",
+    stage: "SIMULATE",
     title: "Deterministic math you can audit",
     body: `EMI = P·r·(1+r)ⁿ/((1+r)ⁿ−1). Break-even = fixed costs ÷ contribution per unit. The AI never does arithmetic — it explains engine output. Change one input and every page recalculates instantly.`,
   },
@@ -38,6 +41,7 @@ const STEPS = [
     key: "simulator",
     icon: Target,
     kicker: "Risk Simulation",
+    stage: "SIMULATE",
     title: "\"What if milk prices fall?\"",
     body: "The simulator shows before/after for revenue, profit, margin and break-even in real time, plus base/optimistic/conservative/stress presets — each answer labeled as an AI ESTIMATE.",
   },
@@ -45,6 +49,7 @@ const STEPS = [
     key: "local",
     icon: MapPinned,
     kicker: "Hyper-Local Intelligence",
+    stage: "ANALYZE",
     title: "Your village, your market",
     body: "Nearby markets, supplier points, competitors and opportunity zones on an interactive map — with demand signals and a location score. Synthetic points are always labeled DEMO DATA.",
   },
@@ -52,6 +57,7 @@ const STEPS = [
     key: "schemes",
     icon: Ribbon,
     kicker: "Scheme Discovery",
+    stage: "FUND",
     title: "Transparent eligibility matching",
     body: "A deterministic filter checks each criterion first (location ✓ sector ✓ investment ✓), then the AI explains the result with source, excerpt and last-verified date. No fabricated schemes. Ever.",
   },
@@ -59,6 +65,7 @@ const STEPS = [
     key: "risk",
     icon: ShieldAlert,
     kicker: "Business Health & Risk",
+    stage: "ANALYZE",
     title: "A readiness score with receipts",
     body: "Five scored factors — financial viability, market, risk resilience, funding readiness, operations — each clickable to reveal why it scored that way and how to improve it.",
   },
@@ -66,6 +73,7 @@ const STEPS = [
     key: "plan",
     icon: FileText,
     kicker: "Actionable Output",
+    stage: "ACT",
     title: "From idea to a bank-ready plan in minutes",
     body: "A 10-section professional business-plan PDF, a 7/30/90/365-day action roadmap, and a copilot that answers questions against the live model.",
   },
@@ -150,7 +158,10 @@ export default function JudgesMode() {
             <span className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-500/15 to-sky-600/15 text-teal-700 ring-1 ring-teal-600/20">
               <Icon className="size-6" />
             </span>
-            <p className="mt-5 text-xs font-bold tracking-[0.25em] text-teal-700 uppercase">{s.kicker}</p>
+            <div className="mt-5 flex items-center gap-2">
+              <p className="text-xs font-bold tracking-[0.25em] text-teal-700 uppercase">{s.kicker}</p>
+              <span className="rounded-full bg-foreground/6 px-2 py-0.5 text-[10px] font-bold tracking-widest text-muted-foreground uppercase">{s.stage}</span>
+            </div>
             <h1 className="mt-2 font-display text-2xl font-extrabold tracking-tight sm:text-3xl">{s.title}</h1>
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">{s.body}</p>
 

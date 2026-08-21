@@ -2,19 +2,22 @@ import { useBusiness } from "@/context/BusinessProvider";
 import { useAuth } from "@/hooks/use-auth";
 import { motion } from "framer-motion";
 import {
-  ArrowRight, Bot, Building2, FileText, LineChart, MapPinned, Mic, Play, Ribbon,
-  ShieldCheck, Sparkles,
+  ArrowRight, Bot, FileText, LayoutDashboard, LineChart, MapPinned, Mic, Play,
+  Ribbon, Scale, ShieldCheck, Sparkles, Target,
 } from "lucide-react";
 import { useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
 import { GlassCard } from "@/components/glass/primitives";
 
+/** Mirrors the in-app journey rail — one narrative everywhere. */
 const PIPELINE = [
   { label: "Idea", icon: Sparkles },
-  { label: "Analysis", icon: Bot },
-  { label: "Finance", icon: LineChart },
-  { label: "Funding", icon: Ribbon },
-  { label: "Action", icon: Building2 },
+  { label: "Understand", icon: LayoutDashboard },
+  { label: "Analyze", icon: MapPinned },
+  { label: "Simulate", icon: LineChart },
+  { label: "Optimize", icon: Scale },
+  { label: "Fund", icon: Ribbon },
+  { label: "Act", icon: Target },
 ];
 
 const FEATURES = [
@@ -168,7 +171,7 @@ export default function Landing() {
                     <span className="text-xs font-semibold tracking-wide text-foreground/80 uppercase">{label}</span>
                   </motion.div>
                   {i < PIPELINE.length - 1 && (
-                    <div className="relative mx-1 mb-6 h-px w-8 bg-border sm:w-14">
+                    <div className="relative mx-1 mb-6 hidden h-px w-6 bg-border sm:block sm:w-10">
                       <motion.span
                         className="absolute top-1/2 size-1.5 -translate-y-1/2 rounded-full bg-teal-500 shadow-[0_0_8px_2px_oklch(0.7_0.12_190/60%)]"
                         animate={{ left: ["0%", "92%"], opacity: [0, 1, 0] }}
