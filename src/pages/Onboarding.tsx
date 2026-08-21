@@ -5,7 +5,7 @@ import { useBusiness } from "@/context/BusinessProvider";
 import { useAuth } from "@/hooks/use-auth";
 import { useSpeechRecognition } from "@/hooks/use-speech";
 import type { EntrepreneurProfile } from "@/lib/types";
-import { computeFinancials, formatInr } from "@/lib/finance/engine";
+
 import { computeScores } from "@/lib/intelligence/scores";
 import { cn } from "@/lib/utils";
 import OptionWheel from "@/components/reactbits/OptionWheel";
@@ -15,18 +15,20 @@ import {
   Lightbulb, MapPin, Mic, MicOff, Sparkles, Target, UserRound,
 } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
+
+/* ── Quick-start options ── */
 
 const QUICK_STARTS = [
-  { key: "new-business", label: "Start a new business", icon: Sparkles },
-  { key: "improve", label: "Improve my existing business", icon: Building2 },
-  { key: "funding", label: "Find funding", icon: Coins },
-  { key: "finances", label: "Understand my finances", icon: BadgeIndianRupee },
-  { key: "compare", label: "Compare business ideas", icon: ArrowRight },
-  { key: "schemes", label: "Find suitable schemes", icon: Target },
+  { key: "new-business" as const, label: "Start a new business", icon: Sparkles },
+  { key: "improve" as const, label: "Improve my existing business", icon: Building2 },
+  { key: "funding" as const, label: "Find funding", icon: Coins },
+  { key: "finances" as const, label: "Understand my finances", icon: BadgeIndianRupee },
+  { key: "compare" as const, label: "Compare business ideas", icon: ArrowRight },
+  { key: "schemes" as const, label: "Find suitable schemes", icon: Target },
 ] as const;
 
-const GOAL_MAP: Record<string, (typeof QUICK_STARTS)[number]["key"]> = {
+const GOAL_MAP: Record<string, typeof QUICK_STARTS[number]["key"]> = {
   "new-business": "new-business",
   improve: "improve",
   funding: "funding",
@@ -35,10 +37,50 @@ const GOAL_MAP: Record<string, (typeof QUICK_STARTS)[number]["key"]> = {
   schemes: "schemes",
 };
 
+/* ── Language config ── */
+
+const LANG_CODES = ["hi", "en", "hinglish"] as const;
+const LANG_LABELS = ["हिन्दी · Hindi", "English", "Hinglish"];
+
+function langToCode(idx: number): typeof LANG_CODES[number] {
+  return LANG_CODES[idx] ?? "en";
+}
+function codeToIndex(lang: string): number {
+  return LANG_CODES.indexOf(lang as typeof LANG_CODES[number]);
+}
+
+/* ── Voice language map ── */
+
+const VOICE_LANG: Record<string, string> = {
+  hi: "hi-IN",
+  en: "en-IN",
+  hinglish: "hi-IN",
+};
+
+/* ── Meaningful AI pipeline stages ── */
+
+const AI_STAGES = [
+  "Understanding your idea",
+  "Identifying your customer",
+  "Mapping local market",
+  "Testing financial assumptions",
+  "Evaluating differentiation",
+  "Identifying key risks",
+  "Building your business model",
+  "Generating next steps",
+];
+
+/* ── Component ── */
+
 export default function Onboarding() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { setProfile, launchDemo, financials } = useBusiness();
   const { isAuthenticated, signIn } = useAuth();
+
+  // ── URL pre-fill ──
+  const urlIdea = searchParams.get("idea") ?? "";
+  const urlLang = searchParams.get("lang");
 
   async function handleDemoLaunch() {
     launchDemo();
@@ -49,20 +91,35 @@ export default function Onboarding() {
       navigate("/auth?returnTo=%2Fdashboard");
     }
   }
+
   const [step, setStep] = useState(0);
   const [name, setName] = useState("");
   const [village, setVillage] = useState("");
   const [district, setDistrict] = useState("");
   const [state, setStateName] = useState("Rajasthan");
-  const [idea, setIdea] = useState("");
+  const [idea, setIdea] = useState(urlIdea);
   const [capital, setCapital] = useState("100000");
   const [experience, setExperience] = useState<"beginner" | "some" | "experienced">("beginner");
-  const [goal, setGoal] = useState<(typeof QUICK_STARTS)[number]["key"]>("new-business");
-  const [language, setLanguage] = useState<"hi" | "en" | "hinglish">("hi");
+  const [goal, setGoal] = useState<typeof QUICK_STARTS[number]["key"]>("new-business");
+
+  // ── Language: URL param → center of wheel (English default) ──
+  const initialLangIdx = urlLang
+    ? codeToIndex(urlLang)
+    : 1; // English default
+
+  const [langIdx, setLangIdx] = useState(initialLangIdx);
+  const language = langToCode(langIdx);
+
+  // ── Speech ──
+  const { micState, start, stop } = useSpeechRecognition((transcript) => {
+    setIdea((prev) => (prev ? `${prev} ${transcript}` : transcript));
+  });
+
+
+
+
   const [generating, setGenerating] = useState(false);
-  const [genSteps, setGenSteps] = useState<Array<{ label: string; detail: string }>>([]);
   const [genPhase, setGenPhase] = useState(0);
-  const { listening, supported, start, stop } = useSpeechRecognition((t) => setIdea((p) => (p ? `${p} ${t}` : t)));
 
   /** Build the profile object exactly as it will be saved. */
   function buildProfile(): EntrepreneurProfile {
@@ -84,39 +141,33 @@ export default function Onboarding() {
     };
   }
 
-  /** Cinematic generation: each stage shows genuinely computed values. */
+  /** Cinematic generation: meaningful stages from the AI pipeline. */
   function finish() {
     setGenerating(true);
     const p = buildProfile();
-    const fin = computeFinancials(financials);
-    const scores = computeScores(p, financials);
-    setGenSteps([
-      { label: "Understanding your idea", detail: `${p.businessIdea.split("—")[0].trim().slice(0, 44)}… · ${p.location.village}, ${p.location.district}` },
-      { label: "Structuring your financial model", detail: `Startup ${formatInr(fin.totalStartupCost)} · profit ${formatInr(fin.operatingProfit)}/mo · break-even ${Number.isFinite(fin.breakEvenMonths) ? fin.breakEvenMonths : "—"} mo` },
-      { label: "Scoring feasibility & risk", detail: `Readiness ${scores.overall}/100 · ${scores.breakdown.filter((b) => b.score >= 60).length}/5 factors healthy` },
-    ]);
-    // Stage timings keep total under ~2.4s
-    window.setTimeout(() => setGenPhase(1), 700);
-    window.setTimeout(() => setGenPhase(2), 1450);
-    window.setTimeout(() => {
-      setGenPhase(3);
+    setGenPhase(0);
+
+    // Each stage lights up — total ~4s before navigation
+    const stageDuration = 450;
+    AI_STAGES.forEach((_, i) => {
+      setTimeout(() => setGenPhase(i + 1), stageDuration * (i + 1));
+    });
+    // Save profile and navigate after last stage
+    setTimeout(() => {
       setProfile(p);
-    }, 2150);
-    window.setTimeout(() => navigate("/dashboard"), 2750);
+      navigate("/dashboard");
+    }, stageDuration * (AI_STAGES.length + 1));
   }
 
   const steps = [
-    // Step 0: quick start
+    // Step 0: Quick start
     <div key="s0" className="space-y-4">
       <h2 className="font-display text-2xl font-bold sm:text-3xl">Tell us what you want to build.</h2>
       <div className="grid gap-2.5 sm:grid-cols-2">
         {QUICK_STARTS.map(({ key, label, icon: Icon }) => (
           <button
             key={key}
-            onClick={() => {
-              setGoal(key);
-              setStep(1);
-            }}
+            onClick={() => { setGoal(key); setStep(1); }}
             className={cn(
               "glass glass-hover flex items-center gap-3 rounded-2xl px-4 py-4 text-left text-sm font-medium",
               goal === key && "ring-2 ring-primary/50",
@@ -131,7 +182,7 @@ export default function Onboarding() {
       </div>
     </div>,
 
-    // Step 1: idea + voice
+    // Step 1: Idea + voice
     <div key="s1" className="space-y-5">
       <h2 className="font-display text-2xl font-bold sm:text-3xl">What is your business idea?</h2>
       <textarea
@@ -142,29 +193,68 @@ export default function Onboarding() {
         className="glass w-full resize-none rounded-2xl p-4 text-sm outline-none placeholder:text-muted-foreground/60 focus:ring-2 focus:ring-primary/40"
         aria-label="Business idea"
       />
-      {supported && (
-        <div className="flex items-center gap-4">
+
+      {/* Voice input — shows all states clearly */}
+      <div className="flex items-center gap-4">
+        <div className="relative">
           <button
-            onClick={() => (listening ? stop() : start("hi-IN"))}
-            aria-label={listening ? "Stop voice input" : "Speak your idea"}
+            onClick={() => {
+              if (micState === "listening") { stop(); return; }
+              start(VOICE_LANG[language] ?? "en-IN");
+            }}
+            disabled={micState === "unavailable" || micState === "denied"}
+            aria-label={
+              micState === "listening" ? "Stop listening" :
+              micState === "denied" ? "Microphone permission denied" :
+              micState === "unavailable" ? "Microphone unavailable in this browser" :
+              "Speak your idea"
+            }
             className={cn(
               "relative flex size-16 shrink-0 items-center justify-center rounded-full text-white shadow-lg transition-transform active:scale-95",
-              listening
-                ? "bg-gradient-to-br from-rose-500 to-red-600"
-                : "bg-gradient-to-br from-indigo-500 to-violet-600",
+              micState === "listening"
+                ? "bg-red-500"
+                : micState === "denied" || micState === "unavailable"
+                  ? "bg-foreground/10 text-muted-foreground"
+                  : "bg-indigo-500",
             )}
           >
-            {listening && <span className="absolute inset-0 animate-ping rounded-full bg-indigo-400/50" />}
-            {listening ? <MicOff className="relative size-6" /> : <Mic className="relative size-6" />}
+            {micState === "listening" && <span className="absolute inset-0 animate-ping rounded-full bg-red-400/40" />}
+            {micState === "listening" ? (
+              <MicOff className="relative size-6" />
+            ) : micState === "denied" || micState === "unavailable" ? (
+              <MicOff className="relative size-6" />
+            ) : (
+              <Mic className="relative size-6" />
+            )}
           </button>
-          <p className="text-sm text-muted-foreground">
-            {listening ? "Listening… speak in Hindi or English" : "Or press and speak — Hindi, English or Hinglish"}
-          </p>
         </div>
-      )}
+        <div className="text-sm">
+          {micState === "listening" && (
+            <span className="text-red-400">Listening… speak now</span>
+          )}
+          {micState === "processing" && (
+            <span className="text-indigo-400">Processing…</span>
+          )}
+          {micState === "completed" && (
+            <span className="text-emerald-400">Got it — edit freely below</span>
+          )}
+          {micState === "denied" && (
+            <span className="text-amber-400">Permission denied — enable microphone in browser settings</span>
+          )}
+          {micState === "unavailable" && (
+            <span className="text-muted-foreground">Voice not supported in this browser — type your idea instead</span>
+          )}
+          {micState === "error" && (
+            <span className="text-amber-400">Voice error — please try again or type</span>
+          )}
+          {micState === "idle" && (
+            <span className="text-muted-foreground">Or press and speak — {language === "hi" ? "हिन्दी" : language === "hinglish" ? "Hinglish" : "English"}</span>
+          )}
+        </div>
+      </div>
     </div>,
 
-    // Step 2: who & where
+    // Step 2: Who & where
     <div key="s2" className="space-y-4">
       <h2 className="font-display text-2xl font-bold sm:text-3xl">A little about you</h2>
       <div className="grid gap-3 sm:grid-cols-2">
@@ -210,25 +300,24 @@ export default function Onboarding() {
       </div>
     </div>,
 
-    // Step 3: language + generate
+    // Step 3: Language + generate
     <div key="s3" className="space-y-5">
       <h2 className="font-display text-2xl font-bold sm:text-3xl">How should GRAMIQ talk to you?</h2>
       <GlassCard className="flex flex-col items-center bg-foreground/4 p-4">
         <OptionWheel
-          items={["हिन्दी · Hindi", "English", "Hinglish"]}
-          defaultSelected={language === "en" ? 1 : language === "hinglish" ? 2 : 0}
-          onChange={(i) => setLanguage(((["hi", "en", "hinglish"] as const)[i]) ?? "hi")}
-          textColor="#94a3b8"
+          items={LANG_LABELS}
+          defaultSelected={1}
+          onChange={(i) => setLangIdx(i)}
+          textColor="#64748b"
           activeColor="#818cf8"
-          fontSize={1.35}
+          fontSize={1.2}
         />
         <p className="mt-1 text-xs text-muted-foreground">Scroll or drag to choose your language</p>
       </GlassCard>
       <GlassCard className="flex items-start gap-3 bg-foreground/4 p-4">
-        <Lightbulb className="mt-0.5 size-5 shrink-0 text-amber-500" />
+        <Lightbulb className="mt-0.5 size-5 shrink-0 text-amber-400" />
         <p className="text-sm leading-relaxed text-muted-foreground">
-          Regional-language responses and external STT/TTS services plug into the same voice pipeline.
-          You can change this anytime in settings.
+          Responses and voice input adapt to your language. You can change this anytime.
         </p>
       </GlassCard>
     </div>,
@@ -239,18 +328,13 @@ export default function Onboarding() {
       <header className="px-4 pt-6 sm:px-8">
         <div className="mx-auto flex max-w-3xl items-center justify-between">
           <button className="flex items-center gap-2" onClick={() => navigate("/")}>
-            <span className="flex size-8 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-md shadow-indigo-500/30">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-indigo-500 text-white shadow-md shadow-indigo-500/25">
               <Sparkles className="size-4" />
             </span>
             <span className="font-display text-lg font-bold tracking-tight">GRAMIQ</span>
           </button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="glass rounded-full"
-            onClick={handleDemoLaunch}
-          >
-            Launch Demo instead
+          <Button variant="outline" size="sm" className="glass rounded-full" onClick={handleDemoLaunch}>
+            Launch Demo
           </Button>
         </div>
       </header>
@@ -263,58 +347,56 @@ export default function Onboarding() {
               key={i}
               className={cn(
                 "h-1.5 flex-1 rounded-full transition-colors duration-300",
-                i <= step ? "bg-gradient-to-r from-indigo-500 to-violet-500" : "bg-foreground/10",
+                i <= step ? "bg-indigo-500" : "bg-foreground/10",
               )}
             />
           ))}
         </div>
 
-        {/* Cinematic generation sequence — every value shown is genuinely computed */}
+        {/* AI Generation Sequence — meaningful pipeline stages */}
         {generating ? (
           <GlassCard className="p-8">
             <div className="flex flex-col items-center text-center">
-              {genPhase >= 3 && genSteps.length === 3 ? (() => {
-                const p = buildProfile();
-                const scores = computeScores(p, financials);
-                return (
-                  <motion.div initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 200, damping: 16 }}>
-                    <ScoreRing score={scores.overall} size={128} label="Ready" />
-                  </motion.div>
-                );
-              })() : (
+              {genPhase >= AI_STAGES.length ? (
+                <motion.div initial={{ scale: 0.7, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 200, damping: 16 }}>
+                  <ScoreRing score={computeScores(buildProfile(), financials).overall} size={120} label="Ready" />
+                </motion.div>
+              ) : (
                 <motion.div
                   animate={{ rotate: 360 }}
                   transition={{ repeat: Infinity, duration: 1.6, ease: "linear" }}
-                  className="flex size-16 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/25"
+                  className="flex size-16 items-center justify-center rounded-2xl bg-indigo-500 text-white shadow-lg shadow-indigo-500/25"
                 >
                   <Sparkles className="size-7" />
                 </motion.div>
- )}
+              )}
               <p className="mt-4 font-display text-lg font-bold">
-                {genPhase >= 3 ? "Your business blueprint is ready" : "Building your blueprint…"}
+                {genPhase >= AI_STAGES.length ? "Your blueprint is ready" : genPhase > 0 ? AI_STAGES[genPhase - 1] : "Starting analysis…"}
               </p>
             </div>
-            <ul className="mx-auto mt-6 max-w-md space-y-2.5">
-              {genSteps.map((s, i) => {
-                const active = genPhase >= i;
+            <ul className="mx-auto mt-6 max-w-md space-y-1.5">
+              {AI_STAGES.map((label, i) => {
                 const done = genPhase > i;
-                return (                    <li
-                    key={s.label}              className={cn("rounded-xl px-4 py-3 transition-all duration-500",
-                      active ? "bg-foreground/8 ring-1 ring-indigo-500/25" : "bg-foreground/4 opacity-40")}
-                  >
-                    <p className="flex items-center gap-2 text-sm font-semibold">
-                      {done ? (
-                        <CheckCircle2 className="size-4 shrink-0 text-emerald-400" />
-                      ) : (
-                        <span className="size-4 shrink-0 animate-pulse rounded-full border-2 border-indigo-400 border-t-transparent" style={{ animationDuration: "0.9s" }} />
-                      )}
-                      {s.label}
-                    </p>
-                    {active && (
-                      <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }} className="mt-1 pl-6 text-xs text-muted-foreground tabular">
-                        {s.detail}
-                      </motion.p>
+                const active = genPhase === i;
+                return (
+                  <li
+                    key={label}
+                    className={cn(
+                      "rounded-lg px-4 py-2 text-sm transition-all duration-300",
+                      done ? "bg-foreground/6 text-foreground" : active ? "bg-foreground/8 text-foreground" : "text-muted-foreground/40",
                     )}
+                  >
+                    <span className="flex items-center gap-2">
+                      {done ? (
+                        <CheckCircle2 className="size-3.5 shrink-0 text-emerald-400" />
+                      ) : (
+                        <span className={cn(
+                          "size-3.5 shrink-0 rounded-full border-2",
+                          active ? "border-indigo-400 border-t-transparent animate-spin" : "border-foreground/15",
+                        )} style={{ animationDuration: "0.8s" }} />
+                      )}
+                      {label}
+                    </span>
                   </li>
                 );
               })}
@@ -325,10 +407,10 @@ export default function Onboarding() {
             <AnimatePresence mode="wait">
               <motion.div
                 key={step}
-                initial={{ opacity: 0, x: 24 }}
+                initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -24 }}
-                transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
               >
                 <GlassCard className="p-6 sm:p-8">{steps[step]}</GlassCard>
               </motion.div>
@@ -344,7 +426,7 @@ export default function Onboarding() {
                 </Button>
               ) : (
                 <Button onClick={finish} className="gap-2">
-                  Build My Business Plan <ArrowRight className="size-4" />
+                  Build My Business <ArrowRight className="size-4" />
                 </Button>
               )}
             </div>

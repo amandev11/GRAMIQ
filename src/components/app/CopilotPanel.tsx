@@ -133,9 +133,10 @@ export function CopilotPanel({
   const [input, setInput] = useState("");
   const [thinking, setThinking] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
-  const { listening, supported, start, stop } = useSpeechRecognition((transcript) => {
+  const { micState, supported, start, stop } = useSpeechRecognition((transcript) => {
     setInput(transcript);
   });
+  const listening = micState === "listening";
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
@@ -295,14 +296,19 @@ export function CopilotPanel({
               type="button"
               size="icon"
               variant={listening ? "default" : "outline"}
-              aria-label={listening ? "Stop listening" : "Speak your question"}
-              onClick={() => (listening ? stop() : start("en-IN"))}
+              aria-label={micState === "listening" ? "Stop listening" : micState === "denied" ? "Microphone permission denied" : micState === "unavailable" ? "Microphone unavailable" : "Speak your question"}
+              disabled={micState === "denied" || micState === "unavailable"}
+              onClick={() => {
+                if (micState === "listening") { stop(); return; }
+                const langMap: Record<string, string> = { hi: "hi-IN", en: "en-IN", hinglish: "hi-IN" };
+                start(langMap[profile?.language ?? "en"] ?? "en-IN");
+              }}
               className={cn("shrink-0 rounded-full", listening && "animate-pulse")}
             >
               {listening ? <MicOff className="size-4" /> : <Mic className="size-4" />}
             </Button>
           ) : (
-            <Button type="button" size="icon" variant="outline" disabled aria-label="Voice input unavailable" className="shrink-0 rounded-full">
+            <Button type="button" size="icon" variant="outline" disabled aria-label="Voice input not supported in this browser" className="shrink-0 rounded-full">
               <MicOff className="size-4" />
             </Button>
           )}
