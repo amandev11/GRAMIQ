@@ -5,6 +5,7 @@
  */
 import { COMPARISON_CANDIDATES } from "@/lib/data/demo";
 import { computeFinancials, formatInr } from "@/lib/finance/engine";
+import { L, pick, type Lang } from "@/lib/i18n/strings";
 import type { EntrepreneurProfile, FinancialInputs, FinancialResults } from "@/lib/types";
 
 export interface Blueprint {
@@ -21,38 +22,47 @@ export interface Blueprint {
 
 export function generateBlueprint(profile: EntrepreneurProfile, f: FinancialInputs): Blueprint {
   const r = computeFinancials(f);
+  const lang: Lang = profile.language ?? "en";
+  const t = L.blueprint;
   return {
-    businessName: "Small Dairy Enterprise",
-    overview: `${profile.name} plans to collect milk from small farmers around ${profile.location.village} (${profile.location.district}, ${profile.location.state}) and sell to households and shops. The model runs on ${f.unitsPerMonth.toLocaleString("en-IN")} litres/month at ₹${f.sellingPricePerUnit}/L against a collection cost of ₹${f.rawMaterialPerUnit}/L.`,
-    whyThisBusiness: [
-      "Daily cash collection — no long credit cycles like crop businesses.",
-      `Uses existing family labor (${profile.resources[0] ?? "available"}), keeping fixed costs low.`,
-      "Steady everyday demand; milk is bought in good and bad months alike.",
-      "Small starting capital fits your available ₹" + profile.capital.toLocaleString("en-IN") + ".",
-    ],
-    investmentBreakdown: [
-      { label: "Equipment (cans, testing kit, cooler share)", amount: f.equipmentCost },
-      { label: "Initial working stock", amount: f.inventoryCost },
-      { label: "Setup & licenses", amount: f.otherSetupCost },
-    ],
-    revenueModel: `Buy at ₹${f.rawMaterialPerUnit}/L → sell at ₹${f.sellingPricePerUnit}/L. Margin of ₹${r.contributionPerUnit}/L × ${f.unitsPerMonth.toLocaleString("en-IN")} L/month = ${formatInr(r.grossProfit)} gross profit before fixed costs.`,
-    monthlyExpenses: [
-      { label: "Labor", amount: f.labor },
-      { label: "Utilities (electricity, chiller share)", amount: f.utilities },
-      { label: "Transport & misc", amount: f.otherMonthlyCost },
-      { label: "Rent", amount: f.rent },
-      { label: "Loan EMI", amount: r.emi },
-    ],
-    marketOpportunity: [
-      `DEMO DATA: ~180 households within 4 km of ${profile.location.village} buy milk daily.`,
-      "DEMO DATA: 12 tea stalls on the highway belt have no formal milk contract.",
-      "AI ESTIMATE: capturing 35–40% of nearby household demand covers your planned volume.",
-    ],
-    fundingOptions: [
-      "Self-funding from savings (current plan)",
-      "DEMO: dairy development subsidy — see Funding & Schemes page",
-      "DEMO: collateral-free micro credit line for working capital",
-    ],
+    businessName: pick(t.businessName, lang),
+    overview: pick(t.overview({
+      name: profile.name,
+      village: profile.location.village,
+      district: profile.location.district,
+      state: profile.location.state,
+      units: f.unitsPerMonth.toLocaleString("en-IN"),
+      price: f.sellingPricePerUnit,
+      cost: f.rawMaterialPerUnit,
+    }), lang),
+    whyThisBusiness: pick(t.whyThisBusiness({
+      capital: profile.capital.toLocaleString("en-IN"),
+      resource: profile.resources[0] ?? "available",
+    }), lang),
+    investmentBreakdown: pick(t.investmentBreakdown, lang).map((it, i) => ({
+      ...it,
+      amount: [f.equipmentCost, f.inventoryCost, f.otherSetupCost][i] ?? 0,
+    })),
+    // Revenue model mixes ₹ figures with translatable framing — keep numbers, localize verbs
+    revenueModel: (() => {
+      const buy = `₹${f.rawMaterialPerUnit}/L`;
+      const sell = `₹${f.sellingPricePerUnit}/L`;
+      const margin = `₹${r.contributionPerUnit}/L`;
+      const units = f.unitsPerMonth.toLocaleString("en-IN");
+      const gross = formatInr(r.grossProfit);
+      const buySell: Record<Lang, string> = {
+        en: `Buy at ${buy} → sell at ${sell}. Margin of ${margin} × ${units} L/month = ${gross} gross profit before fixed costs.`,
+        hi: `ख़रीद ${buy} → बिक्री ${sell}। मार्जिन ${margin} × ${units} ली./माह = ${gross} निश्चित लागत से पहले सकल लाभ।`,
+        hinglish: `Buy ${buy} → sell ${sell}. Margin ${margin} × ${units} L/month = ${gross} gross profit before fixed costs.`,
+      };
+      return buySell[lang];
+    })(),
+    monthlyExpenses: pick(t.monthlyExpenses, lang).map((it, i) => ({
+      ...it,
+      amount: [f.labor, f.utilities, f.otherMonthlyCost, f.rent, r.emi][i] ?? 0,
+    })),
+    marketOpportunity: pick(t.marketOpportunity({ village: profile.location.village }), lang),
+    fundingOptions: pick(t.fundingOptions, lang),
     results: r,
   };
 }

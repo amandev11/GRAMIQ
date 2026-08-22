@@ -223,17 +223,58 @@ export const COMPARISON_CANDIDATES: BizCandidate[] = [
   },
 ];
 
-export const DEFAULT_ACTION_PLAN: ActionItem[] = [
-  { id: "a1", horizon: "7d", task: "Talk to 10 households about milk price they pay today", done: false },
-  { id: "a2", horizon: "7d", task: "Meet Farmer Collection Points A & B about daily supply", done: false },
-  { id: "a3", horizon: "7d", task: "Price milk cans, testing kit and cooling arrangement", done: false },
-  { id: "a4", horizon: "30d", task: "Finalize supplier rates and write them into your plan", done: false },
-  { id: "a5", horizon: "30d", task: "Open/confirm a current account for business collections", done: false },
-  { id: "a6", horizon: "30d", task: "Check eligibility for demo dairy support scheme at district office", done: false },
-  { id: "a7", horizon: "90d", task: "Launch pilot route with 40 households", done: false },
-  { id: "a8", horizon: "90d", task: "Track daily collections vs wastage; keep spoilage under 2%", done: false },
-  { id: "a9", horizon: "90d", task: "Review actual vs planned profit with GRAMIQ copilot", done: false },
-  { id: "a10", horizon: "1y", task: "Add value-added products (paneer/curd) if margin allows", done: false },
-  { id: "a11", horizon: "1y", task: "Hire one delivery helper during peak months", done: false },
-  { id: "a12", horizon: "1y", task: "Re-run stress test and set aside 1 month of costs as buffer", done: false },
-];
+/** Localized action plan — task text follows the user's chosen response language. */
+export function getActionPlan(lang: "en" | "hi" | "hinglish"): ActionItem[] {
+  // Importing here would create a cycle (strings → nothing → demo, but demo is
+  // imported by strings indirectly). To avoid the cycle we inline minimal copies.
+  const TASKS: Record<string, string[]> = {
+    en: [
+      "Talk to 10 households about milk price they pay today",
+      "Meet Farmer Collection Points A & B about daily supply",
+      "Price milk cans, testing kit and cooling arrangement",
+      "Finalize supplier rates and write them into your plan",
+      "Open/confirm a current account for business collections",
+      "Check eligibility for demo dairy support scheme at district office",
+      "Launch pilot route with 40 households",
+      "Track daily collections vs wastage; keep spoilage under 2%",
+      "Review actual vs planned profit with GRAMIQ copilot",
+      "Add value-added products (paneer/curd) if margin allows",
+      "Hire one delivery helper during peak months",
+      "Re-run stress test and set aside 1 month of costs as buffer",
+    ],
+    hi: [
+      "10 घरों से उनके द्वारा आज दूध मूल्य पूछें",
+      "किसान संग्रह बिंदु A और B से दैनिक आपूर्ति मिलें",
+      "दूध कैन, टेस्टिंग किट और कूलिंग व्यवस्था का मूल्य लगाएँ",
+      "आपूर्तिकर्ता दरें अंतिम करें और उन्हें अपनी योजना में लिखें",
+      "व्यापार संग्रह के लिए चालू खाता खोलें/पुष्टि करें",
+      "ज़िला कार्यालय में डेयरी सहायता योजना पात्रता जाँचें",
+      "40 घरों के साथ पायलट रूट शुरू करें",
+      "दैनिक संग्रह बनाम क्षय पर नज़र रखें; खराबी 2% से नीचे रखें",
+      "GRAMIQ कोपायलट से वास्तविक बनाम योजनित लाभ समीक्षा करें",
+      "यदि मार्जिन अनुमति दे तो मूल्य-वर्धित उत्पाद (पनीर/दही) जोड़ें",
+      "चरम माह में एक डिलीवरी सहायक रखें",
+      "तनाव परीक्षण दोबारा चलाएँ और 1 माह की लागत बफर रूप में रखें",
+    ],
+    hinglish: [
+      "10 households se unka doodh price pata karo",
+      "Farmer Collection Points A & B se daily supply ke baare mein milo",
+      "Milk cans, testing kit aur cooling arrangement price lagao",
+      "Supplier rates finalize karo aur plan mein likho",
+      "Business collections ke liye current account open/confirm karo",
+      "District office mein demo dairy support scheme eligibility check karo",
+      "40 households ke saath pilot route launch karo",
+      "Daily collections vs wastage track karo; spoilage 2% se neeche rakh lo",
+      "GRAMIQ copilot se actual vs planned profit review karo",
+      "Margin allow kare to value-added products (paneer/curd) add karo",
+      "Peak months mein ek delivery helper hire karo",
+      "Stress test re-run karo aur 1 month ki cost buffer rakh do",
+    ],
+  };
+  const tasks = TASKS[lang] ?? TASKS.en;
+  const horizons: ActionItem["horizon"][] = ["7d", "7d", "7d", "30d", "30d", "30d", "90d", "90d", "90d", "1y", "1y", "1y"];
+  return tasks.map((task, i) => ({ id: `a${i + 1}`, horizon: horizons[i], task, done: false }));
+}
+
+/** Backwards-compatible default (English). New callers should use getActionPlan(lang). */
+export const DEFAULT_ACTION_PLAN: ActionItem[] = getActionPlan("en");

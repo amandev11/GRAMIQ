@@ -6,6 +6,7 @@
  */
 import { DEMO_MARKET_POIS } from "@/lib/data/demo";
 import { roundTo } from "@/lib/finance/engine";
+import { L, pick, type Lang } from "@/lib/i18n/strings";
 import type { EntrepreneurProfile, FinancialInputs } from "@/lib/types";
 
 const clamp = (n: number) => Math.max(5, Math.min(98, Math.round(n)));
@@ -35,13 +36,15 @@ export function computeMarketIntel(profile: EntrepreneurProfile, f: FinancialInp
   const reachScore = clamp(42 + households * 0.18 + (f.unitsPerMonth > 4000 ? 6 : 0));
   const logisticsScore = clamp(94 - avgSupplierKm * 4 - (f.labor > 0 ? 2 : 0));
 
+  const lang: Lang = profile.language ?? "en";
+  const mf = L.market.factors;
   const factors = [
-    { factor: "Demand Signal", score: demandScore, driver: `${Math.round(dailyDemandL)} L/day planned vs ~${households} households + tea-stall belt` },
-    { factor: "Low Competition", score: competitionScore, driver: `Your ₹${f.sellingPricePerUnit}/L vs local ₹${localCompPrice}/L` },
-    { factor: "Accessibility", score: accessibilityScore, driver: `Average ${avgReachKm} km to mapped points` },
-    { factor: "Supplier Proximity", score: supplierScore, driver: `${suppliers.length} collection points, avg ${avgSupplierKm} km` },
-    { factor: "Market Reach", score: reachScore, driver: `~${households} households within 4 km` },
-    { factor: "Logistics Ease", score: logisticsScore, driver: `Short cold-chain routes${f.labor > 0 ? ", delivery help budgeted" : ""}` },
+    { factor: pick(mf.demand, lang), score: demandScore, driver: `${Math.round(dailyDemandL)} L/day planned vs ~${households} households + tea-stall belt` },
+    { factor: pick(mf.competition, lang), score: competitionScore, driver: `Your ₹${f.sellingPricePerUnit}/L vs local ₹${localCompPrice}/L` },
+    { factor: pick(mf.accessibility, lang), score: accessibilityScore, driver: `Average ${avgReachKm} km to mapped points` },
+    { factor: pick(mf.supplier, lang), score: supplierScore, driver: `${suppliers.length} collection points, avg ${avgSupplierKm} km` },
+    { factor: pick(mf.reach, lang), score: reachScore, driver: `~${households} households within 4 km` },
+    { factor: pick(mf.logistics, lang), score: logisticsScore, driver: `Short cold-chain routes${f.labor > 0 ? ", delivery help budgeted" : ""}` },
   ];
 
   const overall = clamp(factors.reduce((s, x) => s + x.score, 0) / factors.length);
@@ -50,9 +53,9 @@ export function computeMarketIntel(profile: EntrepreneurProfile, f: FinancialInp
     factors,
     overall,
     demandSegments: [
-      { seg: "Households", litres: Math.round(dailyDemandL * 0.65), sharePct: 65 },
-      { seg: "Tea stalls", litres: Math.round(dailyDemandL * 0.25), sharePct: 25 },
-      { seg: "Shops", litres: Math.round(dailyDemandL * 0.10), sharePct: 10 },
+      { seg: pick(L.market.demandSegments.households, lang), litres: Math.round(dailyDemandL * 0.65), sharePct: 65 },
+      { seg: pick(L.market.demandSegments.teaStalls, lang), litres: Math.round(dailyDemandL * 0.25), sharePct: 25 },
+      { seg: pick(L.market.demandSegments.shops, lang), litres: Math.round(dailyDemandL * 0.10), sharePct: 10 },
     ],
     reasoning: [
       `${profile.location.village} sits ~${avgSupplierKm} km from two farmer collection points — short morning cold-chain routes.`,

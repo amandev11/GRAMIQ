@@ -3,21 +3,36 @@ import { DataBadge, GlassCard } from "@/components/glass/primitives";
 import { Button } from "@/components/ui/button";
 import { useBusiness } from "@/context/BusinessProvider";
 import { computeFinancials, formatInr, project12Months } from "@/lib/finance/engine";
+import { generateBlueprint } from "@/lib/intelligence/blueprint";
 import { computeRisks } from "@/lib/intelligence/scores";
 import { matchSchemes } from "@/lib/intelligence/schemes";
+import { L, REPORT_SECTIONS, pick, type Lang } from "@/lib/i18n/strings";
+import { useReportPlayer, type ReportSection } from "@/hooks/use-report-player";
 import { motion, useReducedMotion } from "framer-motion";
-import { CheckCircle2, Download, FileText, Printer } from "lucide-react";
+import { CheckCircle2, Download, FileText, Pause, Play, Printer, Square } from "lucide-react";
 import {
   Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-function PlanSection({ n, title, children }: { n: number; title: string; children: ReactNode }) {
+/** Section wrapper that registers its ref for scroll-into-view during Listen. */
+function PlanSection({
+  n, title, sectionKey, activeKey, registerRef, children,
+}: {
+  n: number; title: string; sectionKey: string;
+  activeKey: string | null; registerRef: (key: string, el: HTMLElement | null) => void;
+  children: ReactNode;
+}) {
   const reduced = useReducedMotion();
+  const isActive = activeKey === sectionKey;
   return (
     <motion.section
-      className="print-page mt-8 break-inside-avoid"
+      ref={(el) => registerRef(sectionKey, el)}
+      className={cn(
+        "print-page mt-8 break-inside-avoid rounded-lg transition-all duration-300",
+        isActive && "ring-2 ring-indigo-500/40 bg-indigo-500/[0.04]",
+      )}
       initial={reduced ? false : { opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: reduced ? 0 : 1.5 + n * 0.09, duration: 0.4 }}
@@ -25,6 +40,7 @@ function PlanSection({ n, title, children }: { n: number; title: string; childre
       <h2 className="flex items-baseline gap-3 font-display text-xl font-bold">
         <span className="text-sm text-indigo-300 tabular">{String(n).padStart(2, "0")}</span>
         {title}
+        {isActive && <span className="ml-auto flex items-center gap-1 text-[10px] font-bold tracking-widest text-indigo-300 uppercase"><span className="size-1.5 animate-pulse rounded-full bg-indigo-400" /> Speaking</span>}
       </h2>
       <div className="mt-3 text-sm leading-relaxed text-foreground/85">{children}</div>
     </motion.section>
@@ -32,7 +48,7 @@ function PlanSection({ n, title, children }: { n: number; title: string; childre
 }
 
 /** Document assembly steps — shown while the plan is compiled (values are real). */
-const ASSEMBLY_STEPS = [
+const ASSEMBLY_STEPS_EN = [
   "Compiling financial model",
   "Rendering 12-month projections",
   "Matching funding options",
@@ -56,11 +72,9 @@ const PRINT_THEMES: Array<{ key: PrintTheme; label: string; dot: string }> = [
 ];
 
 function PrintThemeSelector({
-  theme,
-  onChange,
+  theme, onChange,
 }: {
-  theme: PrintTheme;
-  onChange: (t: PrintTheme) => void;
+  theme: PrintTheme; onChange: (t: PrintTheme) => void;
 }) {
   return (
     <div className="no-print flex flex-wrap items-center gap-3 rounded-xl border border-border/40 bg-foreground/[0.04] px-4 py-3">
@@ -108,34 +122,91 @@ export default function BusinessPlan() {
   const reduced = useReducedMotion();
   const [printTheme, setPrintTheme] = useState<PrintTheme>("black");
 
-  // Print themes work by setting custom properties on the document root that
-  // the dedicated @media print stylesheet consumes — so the printed output
-  // genuinely changes per theme (headings, rules, key metrics), not just the
-  // on-screen preview.
   const handlePrint = () => {
     const root = document.documentElement;
     root.style.setProperty("--print-accent", PRINT_ACCENT[printTheme]);
     root.dataset.printTheme = printTheme;
-    // Next frame so styles apply before the print dialog snapshots the DOM.
     requestAnimationFrame(() => window.print());
   };
+
   // Assembly sequence: real compilation steps, ~1.4s, then the document reveals.
-  const [step, setStep] = useState(reduced ? ASSEMBLY_STEPS.length : -1);
+  const [step, setStep] = useState(reduced ? ASSEMBLY_STEPS_EN.length : -1);
   useEffect(() => {
     if (reduced) return;
-    const timers = ASSEMBLY_STEPS.map((_, i) => window.setTimeout(() => setStep(i), i * 350));
+    const timers = ASSEMBLY_STEPS_EN.map((_, i) => window.setTimeout(() => setStep(i), i * 350));
     return () => timers.forEach(clearTimeout);
   }, [reduced]);
-  const assembling = step < ASSEMBLY_STEPS.length - 1;
+  const assembling = step < ASSEMBLY_STEPS_EN.length - 1;
 
-  if (!profile) return null;
-  const fin = computeFinancials(financials);
+  // Section ref registry (declared before any early return so hooks stay in order)
+  const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
+  const registerRef = (key: string, el: HTMLElement | null) => {
+    sectionRefs.current[key] = el;
+  };
+
+  // Language + computed values (null-safe until profile exists)
+  const lang: Lang = profile?.language ?? "en";
+  const fin = profile ? computeFinancials(financials) : null;
+  const blueprint = profile ? generateBlueprint(profile, financials) : null;
+  const risks = profile ? computeRisks(profile, financials) : [];
+  const topSchemes = profile && fin ? matchSchemes(profile, fin.totalStartupCost).filter((m) => m.matchPct >= 60).slice(0, 3) : [];
+  const sections = REPORT_SECTIONS[lang];
+  const t = L.report;
+
+  // ── Build report sections for the ReportPlayer (plain text for TTS) ──
+  // Null-safe: returns empty array if profile/fin not ready.
+  const reportSections: ReportSection[] = useMemo(() => {
+    if (!profile || !fin || !blueprint) return [];
+    const summaryText = pick(t.summary({
+      name: profile.name, village: profile.location.village,
+      startup: formatInr(fin.totalStartupCost), capital: formatInr(profile.capital),
+      revenue: formatInr(fin.monthlyRevenue), be: String(fin.breakEvenMonths),
+    }), lang);
+    const ideaText = `${profile.businessIdea}. ${pick(t.ideaBody, lang)}`;
+    const marketText = pick(t.marketBullets(), lang).join(". ");
+    const investmentText = blueprint.investmentBreakdown
+      .map((it) => `${it.label}: ${formatInr(it.amount)}`).join(". ");
+    const revenueText = `${blueprint.revenueModel}. ${pick({ en: "Monthly revenue", hi: "मासिक आय", hinglish: "Monthly revenue" }, lang)}: ${formatInr(fin.monthlyRevenue)}. ${pick({ en: "Monthly profit", hi: "मासिक लाभ", hinglish: "Monthly profit" }, lang)}: ${formatInr(fin.operatingProfit)}. ${pick({ en: "Break-even", hi: "ब्रेक-ईन", hinglish: "Break-even" }, lang)}: ${fin.breakEvenMonths} ${pick({ en: "months", hi: "माह", hinglish: "months" }, lang)}.`;
+    const risksText = risks.map((r) => `${r.title}, ${r.level}. ${r.why} ${r.mitigation}`).join(". ");
+    const fundingText = topSchemes.length > 0
+      ? topSchemes.map((m) => `${m.scheme.name}, ${m.matchPct}% match`).join(". ")
+      : pick({ en: "No strong scheme matches.", hi: "कोई मजबूत योजना मिलान नहीं।", hinglish: "No strong scheme matches." }, lang);
+    const timelineText = actionItems.filter((a) => !a.done).slice(0, 8)
+      .map((a) => `${pick(t.timelineHorizons[a.horizon], lang)}: ${a.task}`).join(". ");
+    const assumptionsText = pick(t.assumptions, lang).join(". ");
+
+    return [
+      { key: "summary", text: summaryText },
+      { key: "idea", text: ideaText },
+      { key: "market", text: marketText },
+      { key: "investment", text: investmentText },
+      { key: "revenue", text: revenueText },
+      { key: "risks", text: risksText },
+      { key: "funding", text: fundingText },
+      { key: "timeline", text: timelineText },
+      { key: "assumptions", text: assumptionsText },
+    ];
+  }, [profile, fin, risks, topSchemes, actionItems, blueprint, lang, t]);
+
+  const { state: playerState, activeKey, unsupportedReason, play, pause, stop } = useReportPlayer(reportSections, lang);
+
+  // Scroll active section into view when it changes
+  useEffect(() => {
+    if (activeKey && sectionRefs.current[activeKey]) {
+      sectionRefs.current[activeKey]?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [activeKey]);
+
+  // Early return AFTER all hooks are called
+  if (!profile || !fin || !blueprint) return null;
+
   const projection = project12Months(financials);
-  const risks = computeRisks(profile, financials);
-  const topSchemes = matchSchemes(profile, fin.totalStartupCost).filter((m) => m.matchPct >= 60).slice(0, 3);
+
+  // Section labels for the report
+  const sectionTitle = (key: string) => sections.find((s) => s.key === key)?.title ?? key;
 
   return (
-    <AppShell title="Business Plan PDF">
+    <AppShell title={pick({ en: "Business Plan PDF", hi: "व्यापार योजना PDF", hinglish: "Business Plan PDF" }, lang)}>
       <div className="mx-auto max-w-4xl">
         {/* Assembly overlay */}
         {assembling && (
@@ -149,10 +220,10 @@ export default function BusinessPlan() {
                 >
                   <FileText className="size-5" />
                 </motion.span>
-                <p className="font-display font-bold">Assembling your plan…</p>
+                <p className="font-display font-bold">{pick({ en: "Assembling your plan…", hi: "आपकी योजना बन रही है…", hinglish: "Aapki plan ban rahi hai…" }, lang)}</p>
               </div>
               <ul className="mt-4 space-y-2 text-sm">
-                {ASSEMBLY_STEPS.map((s, i) => (
+                {ASSEMBLY_STEPS_EN.map((s, i) => (
                   <li key={s} className={i <= step ? "flex items-center gap-2 text-foreground" : "flex items-center gap-2 text-muted-foreground/50"}>
                     {i < step ? (
                       <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
@@ -168,19 +239,63 @@ export default function BusinessPlan() {
         )}
 
         {/* Toolbar */}
-        {/* Toolbar */}
         <div className="no-print mb-6 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="font-display text-2xl font-bold">Professional Business Plan</h1>
-            <p className="text-sm text-muted-foreground">Print or save as PDF — ready for banks and district offices.</p>
+            <h1 className="font-display text-2xl font-bold">{pick({ en: "Professional Business Plan", hi: "पेशेवर व्यापार योजना", hinglish: "Professional Business Plan" }, lang)}</h1>
+            <p className="text-sm text-muted-foreground">
+              {pick({ en: "Print or save as PDF — ready for banks and district offices.", hi: "प्रिंट करें या PDF सहेजें — बैंक और ज़िला कार्यालयों के लिए तैयार।", hinglish: "Print ya PDF save karo — banks aur district offices ke liye ready." }, lang)}
+            </p>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" className="gap-2 rounded-full" onClick={handlePrint}>
-              <Printer className="size-4" /> Print
+              <Printer className="size-4" /> {pick({ en: "Print", hi: "प्रिंट", hinglish: "Print" }, lang)}
             </Button>
             <Button onClick={handlePrint} className="gap-2 rounded-full">
-              <Download className="size-4" /> Save as PDF
+              <Download className="size-4" /> {pick({ en: "Save as PDF", hi: "PDF सहेजें", hinglish: "Save as PDF" }, lang)}
             </Button>
+          </div>
+        </div>
+
+        {/* Listen control bar — TTS OUTPUT, not microphone input */}
+        <div className="no-print mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-border/40 bg-foreground/[0.04] px-4 py-3">
+          <div className="flex items-center gap-2">
+            <span className="flex size-8 items-center justify-center rounded-lg bg-indigo-500/15 text-indigo-300 ring-1 ring-indigo-500/25">
+              {playerState === "playing" ? <Pause className="size-4" /> : <Play className="size-4" />}
+            </span>
+            <div>
+              <p className="text-sm font-semibold">
+                {pick({ en: "Listen to this report", hi: "इस रिपोर्ट को सुनें", hinglish: "Is report ko suno" }, lang)}
+              </p>
+              <p className="text-[11px] text-muted-foreground">
+                {playerState === "playing" && activeKey
+                  ? `${pick({ en: "Speaking", hi: "बोल रहा है", hinglish: "Speaking" }, lang)}: ${sectionTitle(activeKey)}`
+                  : playerState === "paused"
+                    ? pick({ en: "Paused", hi: "रुका हुआ", hinglish: "Paused" }, lang)
+                    : playerState === "unsupported"
+                      ? pick({ en: "Audio not supported", hi: "ऑडियो समर्थित नहीं", hinglish: "Audio not supported" }, lang)
+                      : pick({ en: "Reads the report aloud in your language", hi: "रिपोर्ट आपकी भाषा में पढ़ता है", hinglish: "Report ko aapki bhasha mein padhta hai" }, lang)}
+              </p>
+            </div>
+          </div>
+          <div className="ml-auto flex items-center gap-2">
+            {unsupportedReason && (
+              <span className="text-[11px] text-amber-400">{unsupportedReason}</span>
+            )}
+            {playerState === "idle" || playerState === "paused" ? (
+              <Button size="sm" className="gap-1.5 rounded-full" onClick={play}>
+                <Play className="size-3.5" />
+                {playerState === "paused" ? pick({ en: "Resume", hi: "जारी रखें", hinglish: "Resume" }, lang) : pick({ en: "Play", hi: "चलाएँ", hinglish: "Play" }, lang)}
+              </Button>
+            ) : playerState === "playing" ? (
+              <Button size="sm" variant="outline" className="gap-1.5 rounded-full" onClick={pause}>
+                <Pause className="size-3.5" /> {pick({ en: "Pause", hi: "रोकें", hinglish: "Pause" }, lang)}
+              </Button>
+            ) : null}
+            {(playerState === "playing" || playerState === "paused") && (
+              <Button size="sm" variant="ghost" className="gap-1.5 rounded-full" onClick={stop}>
+                <Square className="size-3.5" /> {pick({ en: "Stop", hi: "रोकें", hinglish: "Stop" }, lang)}
+              </Button>
+            )}
           </div>
         </div>
 
@@ -189,88 +304,82 @@ export default function BusinessPlan() {
         <GlassCard className="p-6 sm:p-10">
           {/* Cover / header */}
           <header className="border-b-2 border-indigo-500/30 pb-6 text-center print-page">
-            <p className="text-xs font-bold tracking-[0.3em] text-indigo-300 uppercase">GRAMIQ Business Plan</p>
-            <h1 className="mt-2 font-display text-3xl font-extrabold tracking-tight">Small Dairy Enterprise</h1>
+            <p className="text-xs font-bold tracking-[0.3em] text-indigo-300 uppercase">{pick(t.coverLabel, lang)}</p>
+            <h1 className="mt-2 font-display text-3xl font-extrabold tracking-tight">{pick(t.title, lang)}</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {profile.name} · {profile.location.village}, {profile.location.district}, {profile.location.state}
             </p>
             <p className="mt-3 text-xs text-muted-foreground">
-              Prepared by GRAMIQ · {new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
+              {pick(t.preparedBy, lang)} · {new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
             </p>
           </header>
 
-          <PlanSection n={1} title="Executive Summary">
-            <p>
-              {profile.name} plans to establish a small dairy collection-and-sale enterprise in{" "}
-              {profile.location.village}. With a startup investment of {formatInr(fin.totalStartupCost)} against{" "}
-              {formatInr(profile.capital)} of available capital, the business is projected to generate{" "}
-              {formatInr(fin.monthlyRevenue)} monthly revenue at planned volume and reach break-even in
-              approximately {fin.breakEvenMonths} months. All financial projections are deterministic model
-              outputs based on the stated assumptions (AI ESTIMATE); they are not guarantees.
-            </p>
+          <PlanSection n={1} title={sectionTitle("summary")} sectionKey="summary" activeKey={activeKey} registerRef={registerRef}>
+            <p>{pick(t.summary({
+              name: profile.name, village: profile.location.village,
+              startup: formatInr(fin.totalStartupCost), capital: formatInr(profile.capital),
+              revenue: formatInr(fin.monthlyRevenue), be: String(fin.breakEvenMonths),
+            }), lang)}</p>
           </PlanSection>
 
-          <PlanSection n={2} title="Entrepreneur Profile">
+          <PlanSection n={2} title={sectionTitle("profile")} sectionKey="profile" activeKey={activeKey} registerRef={registerRef}>
             <ul className="grid gap-x-8 gap-y-1 sm:grid-cols-2">
-              <li><strong>Name:</strong> {profile.name}</li>
-              <li><strong>Experience:</strong> {profile.experience}</li>
-              <li><strong>Location:</strong> {profile.location.village}, {profile.location.district}</li>
-              <li><strong>Available capital:</strong> {formatInr(profile.capital)}</li>
-              <li><strong>Existing business:</strong> {profile.existingBusiness === "none" ? "First venture" : profile.existingBusiness}</li>
-              <li><strong>Resources:</strong> {profile.resources.join(", ") || "—"}</li>
+              <li><strong>{pick({ en: "Name", hi: "नाम", hinglish: "Name" }, lang)}:</strong> {profile.name}</li>
+              <li><strong>{pick({ en: "Experience", hi: "अनुभव", hinglish: "Experience" }, lang)}:</strong> {profile.experience}</li>
+              <li><strong>{pick({ en: "Location", hi: "स्थान", hinglish: "Location" }, lang)}:</strong> {profile.location.village}, {profile.location.district}</li>
+              <li><strong>{pick({ en: "Available capital", hi: "उपलब्ध पूँजी", hinglish: "Available capital" }, lang)}:</strong> {formatInr(profile.capital)}</li>
+              <li><strong>{pick({ en: "Existing business", hi: "मौजूदा व्यवसाय", hinglish: "Existing business" }, lang)}:</strong> {profile.existingBusiness === "none" ? pick({ en: "First venture", hi: "पहला उद्यम", hinglish: "First venture" }, lang) : profile.existingBusiness}</li>
+              <li><strong>{pick({ en: "Resources", hi: "संसाधन", hinglish: "Resources" }, lang)}:</strong> {profile.resources.join(", ") || "—"}</li>
             </ul>
           </PlanSection>
 
-          <PlanSection n={3} title="Business Idea & Products">
+          <PlanSection n={3} title={sectionTitle("idea")} sectionKey="idea" activeKey={activeKey} registerRef={registerRef}>
             <p>{profile.businessIdea}.</p>
-            <p className="mt-2">
-              Revenue comes from daily household delivery, shop supply and tea-stall contracts. Value-added
-              products (curd, paneer) are a year-two expansion option once the base route is stable.
-            </p>
+            <p className="mt-2">{pick(t.ideaBody, lang)}</p>
           </PlanSection>
 
-          <PlanSection n={4} title="Market Opportunity & Location Analysis">
+          <PlanSection n={4} title={sectionTitle("market")} sectionKey="market" activeKey={activeKey} registerRef={registerRef}>
             <ul className="list-inside list-disc space-y-1">
-              <li>DEMO DATA: ~180 households within 4 km purchase milk daily.</li>
-              <li>DEMO DATA: two farmer collection points within 4 km; ~320 L/day combined potential.</li>
-              <li>AI ESTIMATE: capturing 35–40% of nearby demand covers the planned volume.</li>
+              {pick(t.marketBullets(), lang).map((b, i) => (
+                <li key={i}>{b}</li>
+              ))}
             </ul>
           </PlanSection>
 
-          <PlanSection n={5} title="Startup Investment & Monthly Expenses">
+          <PlanSection n={5} title={sectionTitle("investment")} sectionKey="investment" activeKey={activeKey} registerRef={registerRef}>
             <div className="grid gap-6 sm:grid-cols-2">
               <table className="w-full text-sm">
-                <thead><tr className="border-b border-border text-left text-xs tracking-wide text-muted-foreground uppercase"><th className="py-1.5">Item</th><th className="py-1.5 text-right">Amount</th></tr></thead>
+                <thead><tr className="border-b border-border text-left text-xs tracking-wide text-muted-foreground uppercase"><th className="py-1.5">{pick({ en: "Item", hi: "मद", hinglish: "Item" }, lang)}</th><th className="py-1.5 text-right">{pick({ en: "Amount", hi: "राशि", hinglish: "Amount" }, lang)}</th></tr></thead>
                 <tbody className="tabular">
-                  <tr className="border-b border-border/50"><td className="py-1.5">Equipment</td><td className="py-1.5 text-right">{formatInr(financials.equipmentCost)}</td></tr>
-                  <tr className="border-b border-border/50"><td className="py-1.5">Initial stock</td><td className="py-1.5 text-right">{formatInr(financials.inventoryCost)}</td></tr>
-                  <tr className="border-b border-border/50"><td className="py-1.5">Setup & licenses</td><td className="py-1.5 text-right">{formatInr(financials.otherSetupCost)}</td></tr>
-                  <tr className="font-semibold"><td className="py-1.5">Total startup</td><td className="py-1.5 text-right">{formatInr(fin.totalStartupCost)}</td></tr>
+                  {blueprint.investmentBreakdown.map((it) => (
+                    <tr key={it.label} className="border-b border-border/50"><td className="py-1.5">{it.label}</td><td className="py-1.5 text-right">{formatInr(it.amount)}</td></tr>
+                  ))}
+                  <tr className="font-semibold"><td className="py-1.5">{pick({ en: "Total startup", hi: "कुल स्टार्टअप", hinglish: "Total startup" }, lang)}</td><td className="py-1.5 text-right">{formatInr(fin.totalStartupCost)}</td></tr>
                 </tbody>
               </table>
               <table className="w-full text-sm">
-                <thead><tr className="border-b border-border text-left text-xs tracking-wide text-muted-foreground uppercase"><th className="py-1.5">Monthly</th><th className="py-1.5 text-right">Amount</th></tr></thead>
+                <thead><tr className="border-b border-border text-left text-xs tracking-wide text-muted-foreground uppercase"><th className="py-1.5">{pick({ en: "Monthly", hi: "मासिक", hinglish: "Monthly" }, lang)}</th><th className="py-1.5 text-right">{pick({ en: "Amount", hi: "राशि", hinglish: "Amount" }, lang)}</th></tr></thead>
                 <tbody className="tabular">
-                  <tr className="border-b border-border/50"><td className="py-1.5">Raw material ({financials.unitsPerMonth.toLocaleString("en-IN")} L)</td><td className="py-1.5 text-right">{formatInr(fin.monthlyVariableCost)}</td></tr>
-                  <tr className="border-b border-border/50"><td className="py-1.5">Labor + utilities + other</td><td className="py-1.5 text-right">{formatInr(financials.labor + financials.utilities + financials.otherMonthlyCost + financials.rent)}</td></tr>
-                  <tr className="border-b border-border/50"><td className="py-1.5">Loan EMI</td><td className="py-1.5 text-right">{formatInr(fin.emi)}</td></tr>
-                  <tr className="font-semibold"><td className="py-1.5">Total fixed</td><td className="py-1.5 text-right">{formatInr(fin.monthlyFixedCost)}</td></tr>
+                  {blueprint.monthlyExpenses.map((it) => (
+                    <tr key={it.label} className="border-b border-border/50"><td className="py-1.5">{it.label}</td><td className="py-1.5 text-right">{formatInr(it.amount)}</td></tr>
+                  ))}
+                  <tr className="font-semibold"><td className="py-1.5">{pick({ en: "Total fixed", hi: "कुल निश्चित", hinglish: "Total fixed" }, lang)}</td><td className="py-1.5 text-right">{formatInr(fin.monthlyFixedCost)}</td></tr>
                 </tbody>
               </table>
             </div>
           </PlanSection>
 
-          <PlanSection n={6} title="Revenue & Profit Projection">
+          <PlanSection n={6} title={sectionTitle("revenue")} sectionKey="revenue" activeKey={activeKey} registerRef={registerRef}>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {[
-                ["Monthly revenue", formatInr(fin.monthlyRevenue)],
-                ["Monthly profit", formatInr(fin.operatingProfit)],
-                ["Annual revenue", formatInr(fin.annualRevenue)],
-                ["Annual profit", formatInr(fin.annualProfit)],
-                ["Profit margin", `${fin.profitMarginPct}%`],
-                ["ROI (annual)", `${fin.roiPct}%`],
-                ["Break-even units", `${fin.breakEvenUnits.toLocaleString("en-IN")} L/mo`],
-                ["Break-even period", Number.isFinite(fin.breakEvenMonths) ? `${fin.breakEvenMonths} months` : "—"],
+                [pick({ en: "Monthly revenue", hi: "मासिक आय", hinglish: "Monthly revenue" }, lang), formatInr(fin.monthlyRevenue)],
+                [pick({ en: "Monthly profit", hi: "मासिक लाभ", hinglish: "Monthly profit" }, lang), formatInr(fin.operatingProfit)],
+                [pick({ en: "Annual revenue", hi: "वार्षिक आय", hinglish: "Annual revenue" }, lang), formatInr(fin.annualRevenue)],
+                [pick({ en: "Annual profit", hi: "वार्षिक लाभ", hinglish: "Annual profit" }, lang), formatInr(fin.annualProfit)],
+                [pick({ en: "Profit margin", hi: "लाभ मार्जिन", hinglish: "Profit margin" }, lang), `${fin.profitMarginPct}%`],
+                [pick({ en: "ROI (annual)", hi: "ROI (वार्षिक)", hinglish: "ROI (annual)" }, lang), `${fin.roiPct}%`],
+                [pick({ en: "Break-even units", hi: "ब्रेक-ईन इकाइयाँ", hinglish: "Break-even units" }, lang), `${fin.breakEvenUnits.toLocaleString("en-IN")} L/mo`],
+                [pick({ en: "Break-even period", hi: "ब्रेक-ईन अवधि", hinglish: "Break-even period" }, lang), Number.isFinite(fin.breakEvenMonths) ? `${fin.breakEvenMonths} ${pick({ en: "months", hi: "माह", hinglish: "months" }, lang)}` : "—"],
               ].map(([k, v]) => (
                 <div key={k} className="rounded-xl bg-foreground/6 p-3 ring-1 ring-white/5">
                   <p className="text-[11px] tracking-wide text-muted-foreground uppercase">{k}</p>
@@ -285,8 +394,8 @@ export default function BusinessPlan() {
                   <XAxis dataKey="label" fontSize={10} tickLine={false} axisLine={false} />
                   <YAxis fontSize={10} tickFormatter={(v) => formatInr(Number(v), true)} tickLine={false} axisLine={false} />
                   <Tooltip formatter={(v) => formatInr(Number(v))} contentStyle={{ borderRadius: 12, border: "none", fontSize: 12 }} />
-                  <Bar dataKey="revenue" name="Revenue" fill="oklch(0.58 0.12 205)" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="profit" name="Profit" fill="oklch(0.68 0.13 165)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="revenue" name={pick({ en: "Revenue", hi: "आय", hinglish: "Revenue" }, lang)} fill="oklch(0.58 0.12 205)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="profit" name={pick({ en: "Profit", hi: "लाभ", hinglish: "Profit" }, lang)} fill="oklch(0.68 0.13 165)" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -297,15 +406,19 @@ export default function BusinessPlan() {
                   <XAxis dataKey="label" fontSize={10} tickLine={false} axisLine={false} />
                   <YAxis fontSize={10} tickFormatter={(v) => formatInr(Number(v), true)} tickLine={false} axisLine={false} />
                   <Tooltip formatter={(v) => formatInr(Number(v))} contentStyle={{ borderRadius: 12, border: "none", fontSize: 12 }} />
-                  <Line type="monotone" dataKey="cash" name="Cumulative cash" stroke="oklch(0.64 0.14 300)" strokeWidth={2.5} dot={false} />
+                  <Line type="monotone" dataKey="cash" name={pick({ en: "Cumulative cash", hi: "संचयी नकद", hinglish: "Cumulative cash" }, lang)} stroke="oklch(0.64 0.14 300)" strokeWidth={2.5} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
           </PlanSection>
 
-          <PlanSection n={7} title="Risk Analysis">
+          <PlanSection n={7} title={sectionTitle("risks")} sectionKey="risks" activeKey={activeKey} registerRef={registerRef}>
             <table className="w-full text-sm">
-              <thead><tr className="border-b border-border text-left text-xs tracking-wide text-muted-foreground uppercase"><th className="py-1.5">Risk</th><th className="py-1.5">Level</th><th className="py-1.5">Mitigation</th></tr></thead>
+              <thead><tr className="border-b border-border text-left text-xs tracking-wide text-muted-foreground uppercase">
+                <th className="py-1.5">{pick({ en: "Risk", hi: "जोखिम", hinglish: "Risk" }, lang)}</th>
+                <th className="py-1.5">{pick({ en: "Level", hi: "स्तर", hinglish: "Level" }, lang)}</th>
+                <th className="py-1.5">{pick({ en: "Mitigation", hi: "शमन", hinglish: "Mitigation" }, lang)}</th>
+              </tr></thead>
               <tbody>
                 {risks.map((r) => (
                   <tr key={r.id} className="border-b border-border/50 align-top">
@@ -318,30 +431,30 @@ export default function BusinessPlan() {
             </table>
           </PlanSection>
 
-          <PlanSection n={8} title="Funding Opportunities">
+          <PlanSection n={8} title={sectionTitle("funding")} sectionKey="funding" activeKey={activeKey} registerRef={registerRef}>
             {topSchemes.length > 0 ? (
               <ul className="space-y-2">
                 {topSchemes.map((m) => (
                   <li key={m.scheme.id} className="rounded-xl bg-foreground/6 p-3 ring-1 ring-white/5">
-                    <p className="font-medium">{m.scheme.name} · {m.matchPct}% criteria match</p>
+                    <p className="font-medium">{m.scheme.name} · {m.matchPct}% {pick({ en: "criteria match", hi: "मानदंड मिलान", hinglish: "criteria match" }, lang)}</p>
                     <p className="text-xs text-muted-foreground">
-                      {m.scheme.type} · Source: {m.scheme.source.title} · last verified {m.scheme.source.lastVerified}
+                      {m.scheme.type} · {pick({ en: "Source", hi: "स्रोत", hinglish: "Source" }, lang)}: {m.scheme.source.title} · {pick({ en: "last verified", hi: "अंतिम सत्यापन", hinglish: "last verified" }, lang)} {m.scheme.source.lastVerified}
                     </p>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p>No strong scheme matches in the current demo database.</p>
+              <p>{pick({ en: "No strong scheme matches in the current demo database.", hi: "मौजूदा डेमो डेटाबेस में कोई मजबूत योजना मिलान नहीं।", hinglish: "Current demo database mein koi strong scheme match nahi." }, lang)}</p>
             )}
             <DataBadge source="DEMO DATA" className="mt-3" />
           </PlanSection>
 
-          <PlanSection n={9} title="Implementation Timeline">
+          <PlanSection n={9} title={sectionTitle("timeline")} sectionKey="timeline" activeKey={activeKey} registerRef={registerRef}>
             <ol className="space-y-1.5">
               {actionItems.filter((a) => !a.done).slice(0, 8).map((a) => (
                 <li key={a.id} className="flex gap-2 text-sm">
                   <span className="shrink-0 rounded-md bg-indigo-500/10 px-1.5 py-0.5 text-[10px] font-bold text-indigo-300 uppercase">
-                    {{ "7d": "7 days", "30d": "30 days", "90d": "90 days", "1y": "Year 1" }[a.horizon]}
+                    {pick(t.timelineHorizons[a.horizon], lang)}
                   </span>
                   {a.task}
                 </li>
@@ -349,12 +462,11 @@ export default function BusinessPlan() {
             </ol>
           </PlanSection>
 
-          <PlanSection n={10} title="Important Assumptions & Data Sources">
+          <PlanSection n={10} title={sectionTitle("assumptions")} sectionKey="assumptions" activeKey={activeKey} registerRef={registerRef}>
             <ul className="list-inside list-disc space-y-1 text-muted-foreground">
-              <li>All financial figures derive from GRAMIQ's deterministic calculation engine given the inputs above (AI ESTIMATE).</li>
-              <li>Ramp-up assumes 55% of planned volume in month 1, reaching full volume by month 6.</li>
-              <li>Market and scheme entries are clearly labeled DEMO DATA from the prototype knowledge base.</li>
-              <li>This plan is decision support, not a guarantee of business success or scheme eligibility.</li>
+              {pick(t.assumptions, lang).map((a, i) => (
+                <li key={i}>{a}</li>
+              ))}
             </ul>
           </PlanSection>
         </GlassCard>

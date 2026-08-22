@@ -6,6 +6,7 @@
 import { applyScenario, computeFinancials, formatInr, SCENARIOS } from "@/lib/finance/engine";
 import { computeRisks } from "@/lib/intelligence/scores";
 import { matchSchemes } from "@/lib/intelligence/schemes";
+import { pick, type Lang } from "@/lib/i18n/strings";
 import type { EntrepreneurProfile, FinancialInputs } from "@/lib/types";
 
 export interface CopilotMetric {
@@ -36,15 +37,25 @@ export function answerQuestion(
   const q = question.toLowerCase();
   const base = computeFinancials(inputs);
   const risks = computeRisks(profile, inputs);
+  const lang: Lang = profile.language ?? "en";
 
   // "biggest risk"
-  if (q.includes("risk")) {
+  if (q.includes("risk") || (lang === "hi" && question.includes("जोखिम"))) {
     const high = risks.filter((r) => r.level === "HIGH");
     const top = high[0] ?? risks[0];
+    const headlineMap: Record<Lang, string> = {
+      en: `Biggest risk: ${top.title} (${top.level})`,
+      hi: `सबसे बड़ा जोखिम: ${top.title} (${top.level})`,
+      hinglish: `Biggest risk: ${top.title} (${top.level})`,
+    };
     return {
-      headline: `Biggest risk: ${top.title} (${top.level})`,
-      text: `${top.why}\n\nImpact — ${top.impact}\nMitigation — ${top.mitigation}\n\nYour radar shows ${high.length} HIGH and ${risks.filter((r) => r.level === "MEDIUM").length} MEDIUM risk(s).`,
-      chips: ["Open Risk Radar", "Run stress test", "Show Calculation"],
+      headline: headlineMap[lang],
+      text: `${top.why}\n\n${pick({ en: "Impact", hi: "प्रभाव", hinglish: "Impact" }, lang)} — ${top.impact}\n${pick({ en: "Mitigation", hi: "शमन", hinglish: "Mitigation" }, lang)} — ${top.mitigation}\n\n${pick({
+        en: `Your radar shows ${high.length} HIGH and ${risks.filter((r) => r.level === "MEDIUM").length} MEDIUM risk(s).`,
+        hi: `आपका रडार ${high.length} उच्च और ${risks.filter((r) => r.level === "MEDIUM").length} मध्यम जोखिम दिखाता है।`,
+        hinglish: `Aapka radar ${high.length} HIGH aur ${risks.filter((r) => r.level === "MEDIUM").length} MEDIUM risk dikhata hai.`,
+      }, lang)}`,
+      chips: lang === "hi" ? ["रडार खोलें", "तनाव परीक्षण", "गणना दिखाएँ"] : ["Open Risk Radar", "Run stress test", "Show Calculation"],
       source: "AI ESTIMATE",
     };
   }
@@ -184,15 +195,27 @@ export function answerQuestion(
   }
 
   // default: grounded status summary
+  const glanceHeadline: Record<Lang, string> = {
+    en: "Your business at a glance",
+    hi: "आपका व्यवसाय एक नज़र में",
+    hinglish: "Aapka business ek nazar mein",
+  };
+  const glanceText: Record<Lang, string> = {
+    en: `Biggest risk: ${risks[0].title} (${risks[0].level}).\n\nAsk about your profit, risks, break-even or schemes — or say "what if I invest ₹1.5 lakh?" and I'll simulate it.`,
+    hi: `सबसे बड़ा जोखिम: ${risks[0].title} (${risks[0].level})।\n\nअपने लाभ, जोखिम, ब्रेक-ईन या योजनाओं के बारे में पूछें — या कहें "अगर मैं ₹1.5 लाख निवेश करूँ?" और मैं इसे सिम्युलेट करूँगा।`,
+    hinglish: `Biggest risk: ${risks[0].title} (${risks[0].level}).\n\nProfit, risks, break-even ya schemes ke baare mein poocho — ya bolo "agar main ₹1.5 lakh invest karoon?" aur main simulate karunga.`,
+  };
   return {
-    headline: "Your business at a glance",
+    headline: glanceHeadline[lang],
     metrics: [
-      { label: "Monthly profit", before: "—", after: formatInr(base.operatingProfit) },
-      { label: "Break-even", before: "—", after: `${base.breakEvenMonths} mo` },
-      { label: "Startup cost", before: "—", after: formatInr(base.totalStartupCost) },
+      { label: pick({ en: "Monthly profit", hi: "मासिक लाभ", hinglish: "Monthly profit" }, lang), before: "—", after: formatInr(base.operatingProfit) },
+      { label: pick({ en: "Break-even", hi: "ब्रेक-ईन", hinglish: "Break-even" }, lang), before: "—", after: `${base.breakEvenMonths} mo` },
+      { label: pick({ en: "Startup cost", hi: "स्टार्टअप लागत", hinglish: "Startup cost" }, lang), before: "—", after: formatInr(base.totalStartupCost) },
     ],
-    text: `Biggest risk: ${risks[0].title} (${risks[0].level}).\n\nAsk about your profit, risks, break-even or schemes — or say "what if I invest ₹1.5 lakh?" and I'll simulate it.`,
-    chips: ["What is my biggest risk?", "Show my break-even", "Show Calculation"],
+    text: glanceText[lang],
+    chips: lang === "hi"
+      ? ["मेरा सबसे बड़ा जोखिम क्या है?", "मेरा ब्रेक-ईन दिखाएँ", "गणना दिखाएँ"]
+      : ["What is my biggest risk?", "Show my break-even", "Show Calculation"],
     source: "AI ESTIMATE",
   };
 }

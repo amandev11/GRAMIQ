@@ -3,6 +3,7 @@
  * Structured outputs with provenance; the AI layer explains, never invents numbers.
  */
 import { computeFinancials, formatInr } from "@/lib/finance/engine";
+import { L, pick, type Lang } from "@/lib/i18n/strings";
 import type { EntrepreneurProfile, FinancialInputs, FinancialResults, RiskItem, ScoreBreakdown } from "@/lib/types";
 
 const clamp = (n: number, lo = 0, hi = 100) => Math.max(lo, Math.min(hi, Math.round(n)));
@@ -12,6 +13,7 @@ export function computeScores(profile: EntrepreneurProfile, f: FinancialInputs):
   breakdown: ScoreBreakdown[];
 } {
   const r = computeFinancials(f);
+  const lang: Lang = profile.language ?? "en";
   const margin = r.profitMarginPct;
   const financialViability = clamp(35 + margin * 2.2 + (r.operatingProfit > 0 ? 12 : -15));
   const marketOpportunity = clamp(
@@ -26,44 +28,45 @@ export function computeScores(profile: EntrepreneurProfile, f: FinancialInputs):
   const operationalReadiness = clamp(
     45 + profile.resources.length * 8 + (profile.experience === "beginner" ? 5 : 14) + (f.labor === 0 ? 10 : 0),
   );
+  const s = L.scores;
 
   return {
     overall: clamp((financialViability + marketOpportunity + riskScore + fundingReadiness + operationalReadiness) / 5),
     breakdown: [
       {
         key: "financial",
-        label: "Financial Viability",
+        label: pick(s.financial.label, lang),
         score: financialViability,
-        explanation: `Projected operating profit of ${formatInr(r.operatingProfit)}/month at a ${margin.toFixed(1)}% margin drives this score.`,
-        improvement: "Raise contribution per unit by ₹2–3/L via direct household sales instead of shop-only supply.",
+        explanation: pick(s.financial.explanation({ profit: formatInr(r.operatingProfit), margin: margin.toFixed(1) }), lang),
+        improvement: pick(s.financial.improvement, lang),
       },
       {
         key: "market",
-        label: "Market Opportunity",
+        label: pick(s.market.label, lang),
         score: marketOpportunity,
-        explanation: `Planned volume of ${f.unitsPerMonth.toLocaleString("en-IN")} L/month against local demand signals in ${profile.location.village}, ${profile.location.district}.`,
-        improvement: "Sign 3–4 tea stalls on the highway belt for fixed daily offtake.",
+        explanation: pick(s.market.explanation({ units: f.unitsPerMonth.toLocaleString("en-IN"), village: profile.location.village, district: profile.location.district }), lang),
+        improvement: pick(s.market.improvement, lang),
       },
       {
         key: "risk",
-        label: "Risk Resilience",
+        label: pick(s.risk.label, lang),
         score: riskScore,
-        explanation: `Break-even in ~${Number.isFinite(r.breakEvenMonths) ? r.breakEvenMonths : "—"} months with low fixed costs keeps downside limited.`,
-        improvement: "Keep one month of operating costs as cash buffer before scaling volume.",
+        explanation: pick(s.risk.explanation({ be: Number.isFinite(r.breakEvenMonths) ? String(r.breakEvenMonths) : "—" }), lang),
+        improvement: pick(s.risk.improvement, lang),
       },
       {
         key: "funding",
-        label: "Funding Readiness",
+        label: pick(s.funding.label, lang),
         score: fundingReadiness,
-        explanation: `Available capital ${formatInr(profile.capital)} vs startup need ${formatInr(r.totalStartupCost)}.`,
-        improvement: "Prepare the GRAMIQ business plan PDF — it is accepted as a project report draft.",
+        explanation: pick(s.funding.explanation({ capital: formatInr(profile.capital), startup: formatInr(r.totalStartupCost) }), lang),
+        improvement: pick(s.funding.improvement, lang),
       },
       {
         key: "operational",
-        label: "Operational Readiness",
+        label: pick(s.operational.label, lang),
         score: operationalReadiness,
-        explanation: `${profile.resources.length} resource advantage(s) recorded, including family labor support.`,
-        improvement: "Fix a cold-chain arrangement (shared cooler) before summer months.",
+        explanation: pick(s.operational.explanation({ count: profile.resources.length }), lang),
+        improvement: pick(s.operational.improvement, lang),
       },
     ],
   };
@@ -72,72 +75,74 @@ export function computeScores(profile: EntrepreneurProfile, f: FinancialInputs):
 /** Deterministic risk engine driven off the financial model. */
 export function computeRisks(profile: EntrepreneurProfile, f: FinancialInputs): RiskItem[] {
   const r: FinancialResults = computeFinancials(f);
+  const lang: Lang = profile.language ?? "en";
   const risks: RiskItem[] = [];
   const materialSensitivity = parseFloat(((r.monthlyVariableCost / Math.max(r.monthlyRevenue, 1)) * 100).toFixed(0));
+  const rk = L.risks;
 
   risks.push({
     id: "cost",
     category: "Cost",
-    title: "Raw Material Price Volatility",
+    title: pick(rk.cost.title, lang),
     level: materialSensitivity > 70 ? "HIGH" : "MEDIUM",
-    why: `Raw material is about ${materialSensitivity}% of your revenue. Small price changes move profit sharply.`,
-    impact: "AI ESTIMATE: an 8% input price rise could cut monthly profit by roughly 25–40%.",
-    mitigation: "Agree fixed weekly rates with 2+ suppliers; revisit rates monthly using your copilot.",
+    why: pick(rk.cost.why({ pct: materialSensitivity }), lang),
+    impact: pick(rk.cost.impact, lang),
+    mitigation: pick(rk.cost.mitigation, lang),
     source: "AI ESTIMATE",
   });
 
   risks.push({
     id: "demand",
     category: "Demand",
-    title: "Slower Customer Ramp-Up",
+    title: pick(rk.demand.title, lang),
     level: r.profitMarginPct < 8 ? "HIGH" : "MEDIUM",
-    why: "Your plan assumes full sales from month 1; new routes typically take 3–6 months to fill.",
-    impact: "AI ESTIMATE: at 70% volume your monthly profit falls to about 40–55% of plan.",
-    mitigation: "Start with a smaller pilot route and scale only after collections are stable for 3 weeks.",
+    why: pick(rk.demand.why, lang),
+    impact: pick(rk.demand.impact, lang),
+    mitigation: pick(rk.demand.mitigation, lang),
     source: "AI ESTIMATE",
   });
 
   risks.push({
     id: "cashflow",
     category: "Cash Flow",
-    title: "Working Capital Gap",
+    title: pick(rk.cashflow.title, lang),
     level: f.workingCapital < r.monthlyFixedCost * 2 ? "HIGH" : "LOW",
-    why: `You hold ${formatInr(f.workingCapital)} working capital vs fixed costs of ${formatInr(r.monthlyFixedCost)}/month.`,
-    impact: "Below 2 months of cover, one slow collection week can force borrowing at high cost.",
-    mitigation: "Reserve at least 2 months of fixed costs; collect household payments weekly, not monthly.",
+    why: pick(rk.cashflow.why({ wc: formatInr(f.workingCapital), fc: formatInr(r.monthlyFixedCost) }), lang),
+    impact: pick(rk.cashflow.impact, lang),
+    mitigation: pick(rk.cashflow.mitigation, lang),
     source: "AI ESTIMATE",
   });
 
   risks.push({
     id: "competition",
     category: "Competition",
-    title: "Established Local Seller",
+    title: pick(rk.competition.title, lang),
     level: "MEDIUM",
-    why: "DEMO DATA shows an existing private milk seller on the main route selling at ₹47–48/L.",
-    impact: "Price undercutting on overlapping streets could slow customer acquisition.",
-    mitigation: "Compete on freshness and home delivery timing rather than matching price cuts.",
+    why: pick(rk.competition.why, lang),
+    impact: pick(rk.competition.impact, lang),
+    mitigation: pick(rk.competition.mitigation, lang),
     source: "DEMO DATA",
   });
 
   risks.push({
     id: "weather",
     category: "Weather/Environment",
-    title: "Summer Spoilage & Cold Chain",
+    title: pick(rk.weather.title, lang),
     level: "HIGH",
-    why: "Rajasthan summer temperatures raise spoilage risk without reliable cooling.",
-    impact: "Spoilage above 3% can erase roughly half your monthly profit (AI ESTIMATE).",
-    mitigation: "Arrange shared chiller access and plan morning-only delivery in May–July.",
+    why: pick(rk.weather.why, lang),
+    impact: pick(rk.weather.impact, lang),
+    mitigation: pick(rk.weather.mitigation, lang),
     source: "AI ESTIMATE",
   });
 
   risks.push({
     id: "funding",
     category: "Funding",
-    title: "Single-Source Capital",
+    title: pick(rk.funding.title, lang),
     level: profile.capital >= f.equipmentCost + f.inventoryCost ? "LOW" : "MEDIUM",
-    why: `Startup needs ${formatInr(f.equipmentCost + f.inventoryCost)} against ${formatInr(profile.capital)} available.`,
-    impact: "Any equipment failure early on would come straight out of working capital.",
-    mitigation: "Check scheme matches on the Funding page before committing all savings.",
+    why: pick(rk.funding.why({ need: formatInr(f.equipmentCost + f.inventoryCost), avail: formatInr(profile.capital) }), lang),
+    impact: pick(rk.funding.impact, lang),
+    mitigation: pick(rk.funding.mitigation, lang),
     source: "AI ESTIMATE",
   });
 

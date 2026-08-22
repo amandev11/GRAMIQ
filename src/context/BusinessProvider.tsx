@@ -1,4 +1,4 @@
-import { DEFAULT_ACTION_PLAN, DEMO_FINANCIALS, DEMO_PROFILE } from "@/lib/data/demo";
+import { DEMO_FINANCIALS, DEMO_PROFILE, getActionPlan } from "@/lib/data/demo";
 import type { ActionItem, EntrepreneurProfile, FinancialInputs } from "@/lib/types";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
@@ -34,7 +34,7 @@ function load(): Persisted {
   } catch {
     /* corrupted storage — start fresh */
   }
-  return { profile: null, financials: DEMO_FINANCIALS, actionItems: DEFAULT_ACTION_PLAN, isDemo: false };
+  return { profile: null, financials: DEMO_FINANCIALS, actionItems: getActionPlan("en"), isDemo: false };
 }
 
 export function BusinessProvider({ children }: { children: ReactNode }) {
@@ -52,7 +52,10 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
   }, [state]);
 
   const setProfile = useCallback((profile: EntrepreneurProfile) => {
-    setState((s) => ({ ...s, profile }));
+    // When the profile changes (e.g. onboarding completes), refresh action
+    // items in the selected response language so every downstream screen
+    // (Plan, Business Plan) shows localized task text.
+    setState((s) => ({ ...s, profile, actionItems: getActionPlan(profile.language) }));
   }, []);
 
   const setFinancials = useCallback((f: Partial<FinancialInputs>) => {
@@ -69,7 +72,7 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
   const launchDemo = useCallback(() => {
     setState((s) => {
       if (!s.isDemo) setPreDemoSnapshot(s);
-      return { profile: DEMO_PROFILE, financials: DEMO_FINANCIALS, actionItems: DEFAULT_ACTION_PLAN, isDemo: true };
+      return { profile: DEMO_PROFILE, financials: DEMO_FINANCIALS, actionItems: getActionPlan(DEMO_PROFILE.language), isDemo: true };
     });
   }, []);
 
@@ -78,13 +81,13 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
   const exitDemo = useCallback(() => {
     setState((s) => {
       if (!s.isDemo) return s;
-      return preDemoSnapshot ?? { profile: null, financials: DEMO_FINANCIALS, actionItems: DEFAULT_ACTION_PLAN, isDemo: false };
+      return preDemoSnapshot ?? { profile: null, financials: DEMO_FINANCIALS, actionItems: getActionPlan("en"), isDemo: false };
     });
     setPreDemoSnapshot(null);
   }, [preDemoSnapshot]);
 
   const resetAll = useCallback(() => {
-    setState({ profile: null, financials: DEMO_FINANCIALS, actionItems: DEFAULT_ACTION_PLAN, isDemo: false });
+    setState({ profile: null, financials: DEMO_FINANCIALS, actionItems: getActionPlan("en"), isDemo: false });
   }, []);
 
   const value = useMemo<BusinessState>(

@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useBusiness } from "@/context/BusinessProvider";
 import { answerQuestion, type CalcStep, type CopilotMetric } from "@/lib/intelligence/copilot";
+import { L, pick, type Lang } from "@/lib/i18n/strings";
 import { cn } from "@/lib/utils";
 import type { CopilotMessage } from "@/lib/types";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
@@ -9,14 +10,19 @@ import { ArrowDownToLine, Mic, MicOff, Send, Sparkles, Volume2, VolumeX, X } fro
 import { useEffect, useRef, useState } from "react";
 import { useSpeechRecognition } from "@/hooks/use-speech";
 
-const OPENING: CopilotMessage = {
-  id: "opening",
-  role: "assistant",
-  headline: "Namaste! I'm your GRAMIQ copilot",
-  text: "I can see your live business model. Ask about profit, risks or schemes — or say \"what if I invest ₹1.5 lakh?\" and I'll simulate it.",
-  chips: ["What is my biggest risk?", "What if I invest ₹1.5 lakh?", "Show my break-even", "Show Calculation"],
-  source: "AI ESTIMATE",
-};
+function buildOpening(lang: Lang): CopilotMessage {
+  const t = L.copilot;
+  return {
+    id: "opening",
+    role: "assistant",
+    headline: pick(t.openingHeadline, lang),
+    text: pick(t.openingText, lang),
+    chips: lang === "hi"
+      ? ["मेरा सबसे बड़ा जोखिम क्या है?", "अगर मैं ₹1.5 लाख निवेश करूँ?", "मेरा ब्रेक-ईन दिखाएँ", "गणना दिखाएँ"]
+      : ["What is my biggest risk?", "What if I invest ₹1.5 lakh?", "Show my break-even", "Show Calculation"],
+    source: "AI ESTIMATE",
+  };
+}
 
 /** Typewriter reveal for assistant answers (skipped under reduced motion). */
 function StreamedText({ text, speakLang, autoSpeak }: { text: string; speakLang?: string; autoSpeak?: boolean }) {
@@ -145,7 +151,7 @@ export function CopilotPanel({
   onOpenChange: (v: boolean) => void;
 }) {
   const { profile, financials } = useBusiness();
-  const [messages, setMessages] = useState<CopilotMessage[]>([OPENING]);
+  const [messages, setMessages] = useState<CopilotMessage[]>([buildOpening(profile?.language ?? "en")]);
   const [input, setInput] = useState("");
   const [thinking, setThinking] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
