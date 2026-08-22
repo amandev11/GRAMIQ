@@ -14,7 +14,7 @@ import { CheckCircle2, Download, FileText, Pause, Play, Printer, Square } from "
 import {
   Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 /** Section wrapper that registers its ref for scroll-into-view during Listen. */
@@ -64,13 +64,37 @@ const ASSEMBLY_STEPS_EN = [
  */
 type PrintTheme = "red" | "black" | "white" | "blue" | "graphite";
 
-const PRINT_THEMES: Array<{ key: PrintTheme; label: string; dot: string }> = [
-  { key: "red", label: "Red", dot: "#9b1c1c" },
-  { key: "black", label: "Black", dot: "#18181b" },
-  { key: "white", label: "White", dot: "#f5f5f4" },
-  { key: "blue", label: "Blue", dot: "#1e3a8a" },
-  { key: "graphite", label: "Graphite", dot: "#44403c" },
+/**
+ * Full print theme tokens. These drive the ACTUAL printed document via CSS
+ * custom properties consumed by the print stylesheet in index.css — accent,
+ * soft tint, and chart series colors. The vars are applied continuously on
+ * the report container (not only at print time), so PRINT, SAVE AS PDF and a
+ * direct Ctrl+P all render the same selected theme.
+ */
+interface PrintThemeTokens {
+  key: PrintTheme;
+  label: string;
+  dot: string;
+  /** Headings, rules, section numbers, key metric values. */
+  accent: string;
+  /** Light tint for metric tile backgrounds. */
+  accentSoft: string;
+  chart1: string;
+  chart2: string;
+  chart3: string;
+}
+
+const PRINT_THEME_LIST: PrintThemeTokens[] = [
+  { key: "red", label: "Red", dot: "#9b1c1c", accent: "#9b1c1c", accentSoft: "#faf0f0", chart1: "#b91c1c", chart2: "#78716c", chart3: "#9b1c1c" },
+  { key: "black", label: "Black", dot: "#18181b", accent: "#18181b", accentSoft: "#f4f4f5", chart1: "#27272a", chart2: "#71717a", chart3: "#18181b" },
+  { key: "white", label: "White", dot: "#f5f5f4", accent: "#52525b", accentSoft: "#f5f6f7", chart1: "#0f766e", chart2: "#94a3b8", chart3: "#0f766e" },
+  { key: "blue", label: "Blue", dot: "#1e3a8a", accent: "#1e3a8a", accentSoft: "#eef2fa", chart1: "#1d4ed8", chart2: "#0891b2", chart3: "#1e3a8a" },
+  { key: "graphite", label: "Graphite", dot: "#44403c", accent: "#44403c", accentSoft: "#f2f1ef", chart1: "#57534e", chart2: "#a8a29e", chart3: "#44403c" },
 ];
+
+const THEME_TOKENS: Record<PrintTheme, PrintThemeTokens> = Object.fromEntries(
+  PRINT_THEME_LIST.map((t) => [t.key, t]),
+) as Record<PrintTheme, PrintThemeTokens>;
 
 function PrintThemeSelector({
   theme, onChange,
@@ -81,7 +105,7 @@ function PrintThemeSelector({
     <div className="no-print flex flex-wrap items-center gap-3 rounded-xl border border-border/40 bg-foreground/[0.04] px-4 py-3">
       <span className="text-[11px] font-bold tracking-widest text-muted-foreground uppercase">Print style</span>
       <div className="flex flex-wrap gap-2">
-        {PRINT_THEMES.map(({ key, label, dot }) => (
+        {PRINT_THEME_LIST.map(({ key, label, dot }) => (
           <button
             key={key}
             type="button"
@@ -109,26 +133,43 @@ function PrintThemeSelector({
   );
 }
 
-/** Accent color per print theme — applied as --print-accent on <html> before printing. */
-const PRINT_ACCENT: Record<PrintTheme, string> = {
-  red: "#9b1c1c",
-  black: "#18181b",
-  white: "#52525b",
-  blue: "#1e3a8a",
-  graphite: "#44403c",
-};
+/** Accent color per print theme — see PRINT_THEME_LIST tokens above. */
 
 export default function BusinessPlan() {
   const { profile, financials, actionItems } = useBusiness();
   const reduced = useReducedMotion();
-  const [printTheme, setPrintTheme] = useState<PrintTheme>("black");
 
-  const handlePrint = () => {
-    const root = document.documentElement;
-    root.style.setProperty("--print-accent", PRINT_ACCENT[printTheme]);
-    root.dataset.printTheme = printTheme;
-    requestAnimationFrame(() => window.print());
+  // Selected theme persists across visits AND is applied to the DOM
+  // continuously — so Print, Save as PDF, and a direct Ctrl+P all produce
+  // the same themed document.
+  const [printTheme, setPrintTheme] = useState<PrintTheme>(() => {
+    try {
+      const saved = localStorage.getItem("gramiq-print-theme");
+      return saved && saved in THEME_TOKENS ? (saved as PrintTheme) : "black";
+    } catch {
+      return "black";
+    }
+  });
+  const changeTheme = (t: PrintTheme) => {
+    setPrintTheme(t);
+    try {
+      localStorage.setItem("gramiq-print-theme", t);
+    } catch {
+      /* storage unavailable — theme stays session-only */
+    }
   };
+  const tokens = THEME_TOKENS[printTheme];
+  const themeVars = {
+    "--print-accent": tokens.accent,
+    "--print-accent-soft": tokens.accentSoft,
+    "--print-chart-1": tokens.chart1,
+    "--print-chart-2": tokens.chart2,
+    "--print-chart-3": tokens.chart3,
+  } as CSSProperties;
+
+  // Both Print and Save-as-PDF use the browser's print pipeline with the
+  // same live theme variables — one rendering path, one source of truth.
+  const handlePrint = () => window.print();
 
   // Assembly sequence: real compilation steps, ~1.4s, then the document reveals.
   const [step, setStep] = useState(reduced ? ASSEMBLY_STEPS_EN.length : -1);
@@ -304,6 +345,7 @@ export default function BusinessPlan() {
 
         <PrintThemeSelector theme={printTheme} onChange={setPrintTheme} />
 
+        <div style={themeVars}>
         <GlassCard className="p-6 sm:p-10">
           {/* Cover / header */}
           <header className="border-b-2 border-indigo-500/30 pb-6 text-center print-page">
@@ -397,8 +439,8 @@ export default function BusinessPlan() {
                   <XAxis dataKey="label" fontSize={10} tickLine={false} axisLine={false} />
                   <YAxis fontSize={10} tickFormatter={(v) => formatInr(Number(v), true)} tickLine={false} axisLine={false} />
                   <Tooltip formatter={(v) => formatInr(Number(v))} contentStyle={{ borderRadius: 12, border: "none", fontSize: 12 }} />
-                  <Bar dataKey="revenue" name={pick({ en: "Revenue", hi: "आय", hinglish: "Revenue" }, lang)} fill="oklch(0.58 0.12 205)" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="profit" name={pick({ en: "Profit", hi: "लाभ", hinglish: "Profit" }, lang)} fill="oklch(0.68 0.13 165)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="revenue" name={pick({ en: "Revenue", hi: "आय", hinglish: "Revenue" }, lang)} className="print-series-a" fill="oklch(0.58 0.12 205)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="profit" name={pick({ en: "Profit", hi: "लाभ", hinglish: "Profit" }, lang)} className="print-series-b" fill="oklch(0.68 0.13 165)" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -409,7 +451,7 @@ export default function BusinessPlan() {
                   <XAxis dataKey="label" fontSize={10} tickLine={false} axisLine={false} />
                   <YAxis fontSize={10} tickFormatter={(v) => formatInr(Number(v), true)} tickLine={false} axisLine={false} />
                   <Tooltip formatter={(v) => formatInr(Number(v))} contentStyle={{ borderRadius: 12, border: "none", fontSize: 12 }} />
-                  <Line type="monotone" dataKey="cash" name={pick({ en: "Cumulative cash", hi: "संचयी नकद", hinglish: "Cumulative cash" }, lang)} stroke="oklch(0.64 0.14 300)" strokeWidth={2.5} dot={false} />
+                  <Line type="monotone" dataKey="cash" name={pick({ en: "Cumulative cash", hi: "संचयी नकद", hinglish: "Cumulative cash" }, lang)} className="print-series-c" stroke="oklch(0.64 0.14 300)" strokeWidth={2.5} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -473,6 +515,7 @@ export default function BusinessPlan() {
             </ul>
           </PlanSection>
         </GlassCard>
+        </div>
       </div>
     </AppShell>
   );
