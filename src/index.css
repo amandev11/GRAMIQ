@@ -381,7 +381,13 @@
   nav,
   aside,
   header:not(.print-page),
-  [data-slot='sidebar'] {
+  [data-slot='sidebar'],
+  /* Toasts and floating action buttons must never leak into the document. */
+  [data-sonner-toaster],
+  button[aria-label='Open AI copilot'],
+  /* Any fixed overlay (mobile nav drawer, modals) — the printed report
+     contains no dialogs of its own. */
+  div[role='dialog'] {
     display: none !important;
   }
 

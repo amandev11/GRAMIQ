@@ -229,7 +229,7 @@ export function CopilotPanel({
 
   return (
     <div
-      className={cn("fixed inset-0 z-50", !open && "pointer-events-none")}
+      className={cn("no-print fixed inset-0 z-50", !open && "pointer-events-none")}
       role="dialog"
       aria-modal="true"
       aria-label="AI Copilot"

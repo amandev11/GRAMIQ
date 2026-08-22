@@ -234,7 +234,7 @@ export function AppShell({ children, title }: { children: ReactNode; title?: str
 
       {/* Floating copilot button (mobile) */}
       <button
-        className="glass-strong fixed right-4 bottom-4 z-40 flex size-14 items-center justify-center rounded-full text-indigo-300 shadow-xl lg:hidden"
+        className="glass-strong no-print fixed right-4 bottom-4 z-40 flex size-14 items-center justify-center rounded-full text-indigo-300 shadow-xl lg:hidden"
         onClick={() => setCopilotOpen(true)}
         aria-label="Open AI copilot"
       >
