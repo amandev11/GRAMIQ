@@ -3,6 +3,7 @@ import { DataBadge, GlassCard } from "@/components/glass/primitives";
 import { Button } from "@/components/ui/button";
 import { useBusiness } from "@/context/BusinessProvider";
 import { computeFinancials, formatInr, project12Months } from "@/lib/finance/engine";
+import { detectBusinessModel } from "@/lib/intelligence/business-model";
 import { generateBlueprint } from "@/lib/intelligence/blueprint";
 import { computeRisks } from "@/lib/intelligence/scores";
 import { matchSchemes } from "@/lib/intelligence/schemes";
@@ -148,6 +149,8 @@ export default function BusinessPlan() {
   const lang: Lang = profile?.language ?? "en";
   const fin = profile ? computeFinancials(financials) : null;
   const blueprint = profile ? generateBlueprint(profile, financials) : null;
+  // Units derive from the user's ACTUAL business — never a hardcoded label.
+  const unitShort = profile ? detectBusinessModel(profile.businessIdea).unitShort : "";
   const risks = profile ? computeRisks(profile, financials) : [];
   const topSchemes = profile && fin ? matchSchemes(profile, fin.totalStartupCost).filter((m) => m.matchPct >= 60).slice(0, 3) : [];
   const sections = REPORT_SECTIONS[lang];
@@ -378,7 +381,7 @@ export default function BusinessPlan() {
                 [pick({ en: "Annual profit", hi: "वार्षिक लाभ", hinglish: "Annual profit" }, lang), formatInr(fin.annualProfit)],
                 [pick({ en: "Profit margin", hi: "लाभ मार्जिन", hinglish: "Profit margin" }, lang), `${fin.profitMarginPct}%`],
                 [pick({ en: "ROI (annual)", hi: "ROI (वार्षिक)", hinglish: "ROI (annual)" }, lang), `${fin.roiPct}%`],
-                [pick({ en: "Break-even units", hi: "ब्रेक-ईन इकाइयाँ", hinglish: "Break-even units" }, lang), `${fin.breakEvenUnits.toLocaleString("en-IN")} L/mo`],
+                [pick({ en: "Break-even units", hi: "ब्रेक-ईन इकाइयाँ", hinglish: "Break-even units" }, lang), `${fin.breakEvenUnits.toLocaleString("en-IN")} ${unitShort}/mo`],
                 [pick({ en: "Break-even period", hi: "ब्रेक-ईन अवधि", hinglish: "Break-even period" }, lang), Number.isFinite(fin.breakEvenMonths) ? `${fin.breakEvenMonths} ${pick({ en: "months", hi: "माह", hinglish: "months" }, lang)}` : "—"],
               ].map(([k, v]) => (
                 <div key={k} className="rounded-xl bg-foreground/6 p-3 ring-1 ring-white/5">

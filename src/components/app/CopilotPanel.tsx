@@ -1,25 +1,38 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useBusiness } from "@/context/BusinessProvider";
-import { answerQuestion, type CalcStep, type CopilotMetric } from "@/lib/intelligence/copilot";
+import { answerQuestion, buildCopilotSuggestions, type CalcStep, type CopilotMetric } from "@/lib/intelligence/copilot";
+import { detectBusinessModel } from "@/lib/intelligence/business-model";
 import { L, pick, type Lang } from "@/lib/i18n/strings";
 import { cn } from "@/lib/utils";
-import type { CopilotMessage } from "@/lib/types";
+import type { CopilotChip, CopilotMessage, EntrepreneurProfile } from "@/lib/types";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ArrowDownToLine, Mic, MicOff, Send, Sparkles, Volume2, VolumeX, X } from "lucide-react";
+import { ArrowDownToLine, ArrowUpRight, Mic, MicOff, Send, Sparkles, Volume2, VolumeX, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router";
 import { useSpeechRecognition } from "@/hooks/use-speech";
 
-function buildOpening(lang: Lang): CopilotMessage {
+/** Opening message is built from the user's ACTUAL business — never a fixed script. */
+function buildOpening(profile: EntrepreneurProfile): CopilotMessage {
+  const lang: Lang = profile.language ?? "en";
   const t = L.copilot;
+  const model = detectBusinessModel(profile.businessIdea);
+  const modelName: Record<Lang, string> = {
+    en: model.label,
+    hi: model.label,
+    hinglish: model.label,
+  };
+  const text: Record<Lang, string> = {
+    en: `I've built a live model of your ${modelName[lang].toLowerCase()} plan and I can see every number in it. Ask about profit, risks or schemes — or say "what if I only have ₹80,000?" and I'll simulate it.`,
+    hi: `मैंने आपकी ${modelName[lang]} योजना का लाइव मॉडल बना लिया है और उसका हर आँकड़ा देख सकता हूँ। लाभ, जोखिम या योजनाओं के बारे में पूछें — या कहें "अगर मेरे पास केवल ₹80,000 हों?" और मैं सिम्युलेट करूँगा।`,
+    hinglish: `Maine aapki ${modelName[lang]} plan ka live model bana liya hai aur uski har value dekh sakta hoon. Profit, risks ya schemes ke baare mein poocho — ya bolo "agar mere paas sirf ₹80,000 hon?" aur main simulate karunga.`,
+  };
   return {
     id: "opening",
     role: "assistant",
     headline: pick(t.openingHeadline, lang),
-    text: pick(t.openingText, lang),
-    chips: lang === "hi"
-      ? ["मेरा सबसे बड़ा जोखिम क्या है?", "अगर मैं ₹1.5 लाख निवेश करूँ?", "मेरा ब्रेक-ईन दिखाएँ", "गणना दिखाएँ"]
-      : ["What is my biggest risk?", "What if I invest ₹1.5 lakh?", "Show my break-even", "Show Calculation"],
+    text: pick(text, lang),
+    chips: buildCopilotSuggestions(profile),
     source: "AI ESTIMATE",
   };
 }
@@ -150,8 +163,9 @@ export function CopilotPanel({
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
-  const { profile, financials } = useBusiness();
-  const [messages, setMessages] = useState<CopilotMessage[]>([buildOpening(profile?.language ?? "en")]);
+  const { profile, financials, actionItems } = useBusiness();
+  const navigate = useNavigate();
+  const [messages, setMessages] = useState<CopilotMessage[]>([]);
   const [input, setInput] = useState("");
   const [thinking, setThinking] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
@@ -160,9 +174,27 @@ export function CopilotPanel({
   });
   const listening = micState === "listening";
 
+  // Conversation memory is scoped to the CURRENT analysis: a new business
+  // idea starts a fresh session — previous analyses can never leak in.
+  const sessionKey = profile ? `${profile.businessIdea}|${profile.language}` : "none";
+  useEffect(() => {
+    if (profile) setMessages([buildOpening(profile)]);
+    else setMessages([]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionKey]);
+
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
   }, [messages.length, thinking]);
+
+  function runChip(chip: CopilotChip) {
+    if (chip.to) {
+      navigate(chip.to);
+      onOpenChange(false);
+      return;
+    }
+    ask(chip.label);
+  }
 
   function ask(qRaw: string) {
     const question = qRaw.trim();
@@ -173,7 +205,7 @@ export function CopilotPanel({
     // Orchestration pipeline latency (deterministic brain responds instantly;
     // delay preserves the conversational rhythm)
     window.setTimeout(() => {
-      const ans = answerQuestion(question, profile, financials);
+      const ans = answerQuestion(question, profile, financials, actionItems);
       setMessages((m) => [
         ...m,
         {
@@ -192,6 +224,8 @@ export function CopilotPanel({
   }
 
   const speakLang = profile?.language === "hi" ? "hi-IN" : "en-IN";
+  const suggestions = profile ? buildCopilotSuggestions(profile) : [];
+  const unitShort = profile ? detectBusinessModel(profile.businessIdea).unitShort : "";
 
   return (
     <div
@@ -225,13 +259,33 @@ export function CopilotPanel({
               <p className="text-sm font-semibold">Business Copilot</p>
               <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                 <span className="size-1.5 animate-pulse rounded-full bg-emerald-500" />
-                Live model · {financials.unitsPerMonth.toLocaleString("en-IN")} L/mo
+                Live model · {financials.unitsPerMonth.toLocaleString("en-IN")} {unitShort}/mo
               </p>
             </div>
           </div>
           <Button variant="ghost" size="icon" aria-label="Close copilot" onClick={() => onOpenChange(false)}>
             <X className="size-5" />
           </Button>
+        </div>
+
+        {/* Contextual suggestions — derived from this business, not generic */}
+        <div className="border-b border-border/40 px-4 py-2.5">
+          <p className="mb-1.5 text-[10px] font-bold tracking-widest text-muted-foreground/70 uppercase">
+            {pick({ en: "Ask about this business", hi: "इस व्यवसाय के बारे में पूछें", hinglish: "Is business ke baare mein poocho" }, profile?.language ?? "en")}
+          </p>
+          <div className="flex gap-1.5 overflow-x-auto pb-1" role="list" aria-label="Suggested questions">
+            {suggestions.map((chip) => (
+              <button
+                key={chip.label}
+                role="listitem"
+                onClick={() => runChip(chip)}
+                className="flex shrink-0 items-center gap-1 rounded-full border border-primary/25 bg-primary/8 px-3 py-1 text-[11px] font-medium whitespace-nowrap text-primary transition-colors hover:bg-primary/15"
+              >
+                {chip.label}
+                {chip.to && <ArrowUpRight className="size-3 opacity-70" />}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Messages */}
@@ -280,11 +334,17 @@ export function CopilotPanel({
                   <div className="flex max-w-full flex-wrap gap-1.5">
                     {m.chips.map((chip) => (
                       <button
-                        key={chip}
-                        onClick={() => ask(chip)}
-                        className="rounded-full border border-primary/30 bg-primary/8 px-3 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/15"
+                        key={chip.label}
+                        onClick={() => runChip(chip)}
+                        className={cn(
+                          "flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+                          chip.to
+                            ? "border-indigo-500/30 bg-indigo-500/10 text-indigo-300 hover:bg-indigo-500/20"
+                            : "border-primary/30 bg-primary/8 text-primary hover:bg-primary/15",
+                        )}
                       >
-                        {chip}
+                        {chip.label}
+                        {chip.to && <ArrowUpRight className="size-3 opacity-70" />}
                       </button>
                     ))}
                   </div>

@@ -44,7 +44,7 @@ const STEPS = [
     icon: Target,
     kicker: "Risk Simulation",
     stage: "SIMULATE",
-    title: "SIMULATOR_TITLE_PLACEHOLDER",
+    title: "Live what-if on your real model",
     body: "The simulator shows before/after for revenue, profit, margin and break-even in real time, plus base/optimistic/conservative/stress presets — each answer labeled as an AI ESTIMATE.",
   },
   {

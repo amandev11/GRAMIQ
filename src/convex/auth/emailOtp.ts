@@ -16,6 +16,15 @@ export const emailOtp = Email({
     return generateRandomString(random, alphabet, 6);
   },
   async sendVerificationRequest({ identifier: email, token }) {
+    // The Freebuff email relay key must live in the environment (Keys UI),
+    // never in source code. A missing key fails loudly instead of silently
+    // sending nothing.
+    const apiKey = process.env.FREEBUFF_EMAIL_API_KEY;
+    if (!apiKey) {
+      throw new Error(
+        "Email OTP is not configured: set FREEBUFF_EMAIL_API_KEY in the project Keys/API keys settings.",
+      );
+    }
     try {
       await axios.post(
         "https://auth.freebuff.app/send_otp",
@@ -26,7 +35,7 @@ export const emailOtp = Email({
         },
         {
           headers: {
-            "x-api-key": "fb_email_2crN1hqIArZP2bEfvjp5Qik4",
+            "x-api-key": apiKey,
           },
         },
       );

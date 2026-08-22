@@ -72,6 +72,10 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     }
   };
 
+  // Reset the error when the user switches between steps so stale failures
+  // never leak into a new attempt.
+  const resetError = () => setError(null);
+
   const handleOtpSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
@@ -79,16 +83,11 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     try {
       const formData = new FormData(event.currentTarget);
       await signIn("email-otp", formData);
-
-      console.log("signed in");
-
       navigate(redirect);
     } catch (error) {
       console.error("OTP verification error:", error);
-
       setError("The verification code you entered is incorrect.");
       setIsLoading(false);
-
       setOtp("");
     }
   };
@@ -97,13 +96,10 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     setIsLoading(true);
     setError(null);
     try {
-      console.log("Attempting anonymous sign in...");
       await signIn("anonymous");
-      console.log("Anonymous sign in successful");
       navigate(redirect);
     } catch (error) {
       console.error("Guest login error:", error);
-      console.error("Error details:", JSON.stringify(error, null, 2));
       setError(`Failed to sign in as guest: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setIsLoading(false);
     }
@@ -116,17 +112,17 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       {/* Auth Content */}
       <div className="flex-1 flex items-center justify-center">
         <div className="flex items-center justify-center h-full flex-col">
-        <Card className="min-w-[350px] pb-0 border shadow-md">
+        <Card className="glass-strong min-w-[350px] border-border/50 pb-0 shadow-xl">
           {step === "signIn" ? (
             <>
               <CardHeader className="text-center">
               <div className="flex justify-center">
                     <img
                       src={logo}
-                      alt="Lock Icon"
+                      alt="GRAMIQ home"
                       width={64}
                       height={64}
-                      className="rounded-lg mb-4 mt-4 cursor-pointer"
+                      className="mx-auto mb-4 mt-4 cursor-pointer opacity-90 transition-opacity hover:opacity-100"
                       onClick={() => navigate("/")}
                     />
                   </div>
@@ -239,7 +235,10 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                     <Button
                       variant="link"
                       className="p-0 h-auto"
-                      onClick={() => setStep("signIn")}
+                      onClick={() => {
+                        resetError();
+                        setStep("signIn");
+                      }}
                     >
                       Try again
                     </Button>
@@ -266,7 +265,10 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                   <Button
                     type="button"
                     variant="ghost"
-                    onClick={() => setStep("signIn")}
+                    onClick={() => {
+                      resetError();
+                      setStep("signIn");
+                    }}
                     disabled={isLoading}
                     className="w-full"
                   >
@@ -277,7 +279,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
             </>
           )}
 
-          <div className="py-4 px-6 text-xs text-center text-muted-foreground bg-muted border-t rounded-b-lg">
+          <div className="py-4 px-6 text-xs text-center text-muted-foreground border-t border-border/60 rounded-b-lg">
             Secured by{" "}
             <a
               href="https://freebuff.com"

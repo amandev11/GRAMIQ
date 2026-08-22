@@ -167,7 +167,7 @@ export default function Onboarding() {
   const canFinish = idea.trim().length >= 5;
 
   function finish() {
-    if (!canFinish) return;
+    if (!canFinish || generating) return; // guard against double submission
     setGenerating(true);
     const p = buildProfile();
     setGenPhase(0);

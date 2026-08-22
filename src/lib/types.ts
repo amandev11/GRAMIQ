@@ -136,6 +136,13 @@ export interface ActionItem {
   done: boolean;
 }
 
+/** A copilot suggestion chip. `to` (optional) navigates to a GRAMIQ page;
+ *  without it the chip re-asks the copilot. */
+export interface CopilotChip {
+  label: string;
+  to?: string;
+}
+
 export interface CopilotMessage {
   id: string;
   role: "user" | "assistant";
@@ -143,6 +150,6 @@ export interface CopilotMessage {
   headline?: string;
   metrics?: Array<{ label: string; before: string; after: string }>;
   calcSteps?: Array<{ expression: string; note: string }>;
-  chips?: string[];
+  chips?: CopilotChip[];
   source?: DataSource;
 }
