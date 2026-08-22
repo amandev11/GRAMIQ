@@ -38,8 +38,13 @@ function PlanSection({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: reduced ? 0 : 1.5 + n * 0.09, duration: 0.4 }}
     >
-      <h2 className="flex items-baseline gap-3 font-display text-xl font-bold">
-        <span className="text-sm text-indigo-300 tabular">{String(n).padStart(2, "0")}</span>
+      {/* Themed by the selected print style via --print-accent (inherits from
+          the report container) — the preview IS the themed document. */}
+      <h2
+        className="flex items-baseline gap-3 border-b pb-2 font-display text-xl font-bold"
+        style={{ borderColor: "color-mix(in srgb, var(--print-accent, #18181b) 35%, transparent)" }}
+      >
+        <span className="text-sm tabular" style={{ color: "var(--print-accent, #6366f1)" }}>{String(n).padStart(2, "0")}</span>
         {title}
         {isActive && <span className="ml-auto flex items-center gap-1 text-[10px] font-bold tracking-widest text-indigo-300 uppercase"><span className="size-1.5 animate-pulse rounded-full bg-indigo-400" /> Speaking</span>}
       </h2>
@@ -129,6 +134,9 @@ function PrintThemeSelector({
           </button>
         ))}
       </div>
+      <p className="w-full text-[11px] leading-relaxed text-muted-foreground">
+        Restyles the document preview below and the printed / saved PDF output.
+      </p>
     </div>
   );
 }
@@ -348,8 +356,14 @@ export default function BusinessPlan() {
         <div style={themeVars}>
         <GlassCard className="p-6 sm:p-10">
           {/* Cover / header */}
-          <header className="border-b-2 border-indigo-500/30 pb-6 text-center print-page">
-            <p className="text-xs font-bold tracking-[0.3em] text-indigo-300 uppercase">{pick(t.coverLabel, lang)}</p>
+          <header
+            className="border-b-2 pb-6 text-center print-page"
+            style={{ borderColor: "var(--print-accent, #18181b)" }}
+          >
+            <p
+              className="text-xs font-bold tracking-[0.3em] uppercase"
+              style={{ color: "var(--print-accent, #6366f1)" }}
+            >{pick(t.coverLabel, lang)}</p>
             <h1 className="mt-2 font-display text-3xl font-extrabold tracking-tight">{blueprint.businessName}</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {profile.name} · {profile.location.village}, {profile.location.district}, {profile.location.state}
@@ -426,7 +440,7 @@ export default function BusinessPlan() {
                 [pick({ en: "Break-even units", hi: "ब्रेक-ईन इकाइयाँ", hinglish: "Break-even units" }, lang), `${fin.breakEvenUnits.toLocaleString("en-IN")} ${unitShort}/mo`],
                 [pick({ en: "Break-even period", hi: "ब्रेक-ईन अवधि", hinglish: "Break-even period" }, lang), Number.isFinite(fin.breakEvenMonths) ? `${fin.breakEvenMonths} ${pick({ en: "months", hi: "माह", hinglish: "months" }, lang)}` : "—"],
               ].map(([k, v]) => (
-                <div key={k} className="rounded-xl bg-foreground/6 p-3 ring-1 ring-white/5">
+                <div key={k} className="rounded-xl bg-foreground/6 p-3 ring-1 ring-white/5" style={{ background: "color-mix(in srgb, var(--print-accent, #6366f1) 10%, transparent)" }}>
                   <p className="text-[11px] tracking-wide text-muted-foreground uppercase">{k}</p>
                   <p className="mt-0.5 font-display text-base font-bold tabular">{v}</p>
                 </div>
@@ -439,8 +453,8 @@ export default function BusinessPlan() {
                   <XAxis dataKey="label" fontSize={10} tickLine={false} axisLine={false} />
                   <YAxis fontSize={10} tickFormatter={(v) => formatInr(Number(v), true)} tickLine={false} axisLine={false} />
                   <Tooltip formatter={(v) => formatInr(Number(v))} contentStyle={{ borderRadius: 12, border: "none", fontSize: 12 }} />
-                  <Bar dataKey="revenue" name={pick({ en: "Revenue", hi: "आय", hinglish: "Revenue" }, lang)} className="print-series-a" fill="oklch(0.58 0.12 205)" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="profit" name={pick({ en: "Profit", hi: "लाभ", hinglish: "Profit" }, lang)} className="print-series-b" fill="oklch(0.68 0.13 165)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="revenue" name={pick({ en: "Revenue", hi: "आय", hinglish: "Revenue" }, lang)} className="print-series-a" fill={tokens.chart1} radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="profit" name={pick({ en: "Profit", hi: "लाभ", hinglish: "Profit" }, lang)} className="print-series-b" fill={tokens.chart2} radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -451,7 +465,7 @@ export default function BusinessPlan() {
                   <XAxis dataKey="label" fontSize={10} tickLine={false} axisLine={false} />
                   <YAxis fontSize={10} tickFormatter={(v) => formatInr(Number(v), true)} tickLine={false} axisLine={false} />
                   <Tooltip formatter={(v) => formatInr(Number(v))} contentStyle={{ borderRadius: 12, border: "none", fontSize: 12 }} />
-                  <Line type="monotone" dataKey="cash" name={pick({ en: "Cumulative cash", hi: "संचयी नकद", hinglish: "Cumulative cash" }, lang)} className="print-series-c" stroke="oklch(0.64 0.14 300)" strokeWidth={2.5} dot={false} />
+                  <Line type="monotone" dataKey="cash" name={pick({ en: "Cumulative cash", hi: "संचयी नकद", hinglish: "Cumulative cash" }, lang)} className="print-series-c" stroke={tokens.chart3} strokeWidth={2.5} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
