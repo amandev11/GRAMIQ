@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useBusiness } from "@/context/BusinessProvider";
 import { computeFinancials, formatInr } from "@/lib/finance/engine";
 import { compareBusinesses } from "@/lib/intelligence/blueprint";
+import { detectBusinessModel } from "@/lib/intelligence/business-model";
 import { cn } from "@/lib/utils";
 import LineSidebar from "@/components/reactbits/LineSidebar";
 import { AnimatePresence, motion } from "framer-motion";
@@ -43,7 +44,7 @@ const STEPS = [
     icon: Target,
     kicker: "Risk Simulation",
     stage: "SIMULATE",
-    title: "\"What if milk prices fall?\"",
+    title: "SIMULATOR_TITLE_PLACEHOLDER",
     body: "The simulator shows before/after for revenue, profit, margin and break-even in real time, plus base/optimistic/conservative/stress presets — each answer labeled as an AI ESTIMATE.",
   },
   {
@@ -97,9 +98,12 @@ export default function JudgesMode() {
   const [step, setStep] = useState(0);
   const [autoplay, setAutoplay] = useState(false);
   const comparison = profile ? compareBusinesses() : null;
+  // Simulator step title uses a scenario from the user's ACTUAL business.
+  const simTitle = `\u201c${profile ? detectBusinessModel(profile.businessIdea).scenarioQuestions[0] : "What if prices fall?"}\u201d`;
 
   const s = STEPS[step];
   const Icon = s.icon;
+  const title = s.key === "simulator" ? simTitle : s.title;
 
   // Autoplay advances through the story
   useEffect(() => {
@@ -193,7 +197,7 @@ export default function JudgesMode() {
               <p className="text-xs font-bold tracking-[0.25em] text-indigo-300 uppercase">{s.kicker}</p>
               <span className="rounded-full bg-foreground/6 px-2 py-0.5 text-[10px] font-bold tracking-widest text-muted-foreground uppercase">{s.stage}</span>
             </div>
-            <h1 className="mt-2 font-display text-2xl font-extrabold tracking-tight sm:text-3xl">{s.title}</h1>
+            <h1 className="mt-2 font-display text-2xl font-extrabold tracking-tight sm:text-3xl">{title}</h1>
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">{s.body}</p>
 
             {/* Live evidence */}

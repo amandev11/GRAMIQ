@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useBusiness } from "@/context/BusinessProvider";
 import { formatInr } from "@/lib/finance/engine";
 import { generateBlueprint } from "@/lib/intelligence/blueprint";
+import { detectBusinessModel } from "@/lib/intelligence/business-model";
 import { motion } from "framer-motion";
 import { CheckCircle2, Download, TrendingUp } from "lucide-react";
 import {
@@ -19,6 +20,8 @@ export default function Blueprint() {
   if (!profile) return null;
   const bp = generateBlueprint(profile, financials);
   const fin = bp.results;
+  // Unit labels derive from the user's ACTUAL business.
+  const u = detectBusinessModel(profile.businessIdea).unitShort;
 
   const expenseData = bp.monthlyExpenses.filter((e) => e.amount > 0).map((e) => ({ name: e.label, amount: e.amount }));
   const investData = bp.investmentBreakdown.map((e) => ({ name: e.label.split(" (")[0], amount: e.amount }));
@@ -57,9 +60,9 @@ export default function Blueprint() {
             <p className="mt-3 rounded-xl bg-foreground/5 p-4 text-sm leading-relaxed">{bp.revenueModel}</p>
             <div className="mt-4 grid grid-cols-3 gap-2 text-center">
               {[
-                { l: "Buy price", v: `₹${financials.rawMaterialPerUnit}/L` },
-                { l: "Sell price", v: `₹${financials.sellingPricePerUnit}/L` },
-                { l: "Margin/L", v: `₹${fin.contributionPerUnit}` },
+                { l: "Input price", v: `₹${financials.rawMaterialPerUnit}/${u}` },
+                { l: "Sell price", v: `₹${financials.sellingPricePerUnit}/${u}` },
+                { l: `Margin/${u}`, v: `₹${fin.contributionPerUnit}` },
               ].map(({ l, v }) => (
                 <div key={l} className="rounded-xl bg-primary/6 p-3 ring-1 ring-primary/10">
                   <p className="text-[11px] text-muted-foreground">{l}</p>
@@ -75,7 +78,7 @@ export default function Blueprint() {
           <StatTile label="Monthly Revenue" value={fin.monthlyRevenue} format={formatInr} tone="positive" icon={<TrendingUp className="size-4" />} />
           <StatTile label="Monthly Expenses" value={fin.monthlyFixedCost + fin.monthlyVariableCost} format={formatInr} />
           <StatTile label="Expected Profit /mo" value={fin.operatingProfit} format={formatInr} tone={fin.operatingProfit > 0 ? "positive" : "negative"} sub={`${fin.profitMarginPct}% margin`} />
-          <StatTile label="Break-even" value={Number.isFinite(fin.breakEvenMonths) ? `${fin.breakEvenMonths} mo` : "—"} sub={`${fin.breakEvenUnits.toLocaleString("en-IN")} L/month`} />
+          <StatTile label="Break-even" value={Number.isFinite(fin.breakEvenMonths) ? `${fin.breakEvenMonths} mo` : "—"} sub={`${fin.breakEvenUnits.toLocaleString("en-IN")} ${u}/month`} />
         </div>
 
         {/* Investment + expenses charts */}

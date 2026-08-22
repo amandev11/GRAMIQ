@@ -4,6 +4,7 @@
  * short narration. Every number comes from the deterministic engine.
  */
 import { applyScenario, computeFinancials, formatInr, SCENARIOS } from "@/lib/finance/engine";
+import { detectBusinessModel } from "@/lib/intelligence/business-model";
 import { computeRisks } from "@/lib/intelligence/scores";
 import { matchSchemes } from "@/lib/intelligence/schemes";
 import { pick, type Lang } from "@/lib/i18n/strings";
@@ -38,6 +39,10 @@ export function answerQuestion(
   const base = computeFinancials(inputs);
   const risks = computeRisks(profile, inputs);
   const lang: Lang = profile.language ?? "en";
+  // All units/chips/scenario language derive from the user's ACTUAL business.
+  const model = detectBusinessModel(profile.businessIdea);
+  const u = model.unitShort;
+  const scenarioQ = model.scenarioQuestions[0];
 
   // "biggest risk"
   if (q.includes("risk") || (lang === "hi" && question.includes("जोखिम"))) {
@@ -94,8 +99,8 @@ export function answerQuestion(
       ],
       text: `Extra capacity adds ${formatInr(sim.monthlyRevenue - base.monthlyRevenue)}/month in revenue, but your payback stretches.\n\nRecommendation: increase only if you can add at least ${formatInr(Math.max(sim.breakEvenUnits - base.breakEvenUnits, 0))} of monthly sales. Otherwise keep the money as working capital.`,
       calcSteps: [
-        { expression: `+${formatInr(delta)} invested → +${(Math.max(delta, 0) / 10000) * 0.06 * 100 | 0}% volume (₹6k capacity per ₹10k)`, note: "Modeled capacity assumption" },
-        { expression: `Break-even: ${formatInr(sim.monthlyFixedCost)} ÷ ₹${sim.contributionPerUnit}/L = ${sim.breakEvenUnits.toLocaleString("en-IN")} L/mo`, note: "Fixed costs ÷ contribution per unit" },
+        { expression: `+${formatInr(delta)} invested → +${(Math.max(delta, 0) / 10000) * 0.06 * 100 | 0}% volume (modeled capacity assumption)`, note: "Capacity scales with invested capital" },
+        { expression: `Break-even: ${formatInr(sim.monthlyFixedCost)} ÷ ₹${sim.contributionPerUnit}/${u} = ${sim.breakEvenUnits.toLocaleString("en-IN")} ${u}/mo`, note: "Fixed costs ÷ contribution per unit" },
       ],
       chips: ["Open Simulator", "Compare", "What is my biggest risk?"],
       source: "AI ESTIMATE",
@@ -109,13 +114,13 @@ export function answerQuestion(
       calcSteps: [
         { expression: `EMI = ${formatInr(base.emi)}`, note: "P·r·(1+r)ⁿ / ((1+r)ⁿ−1) on a reducing balance" },
         { expression: `Fixed costs = ${formatInr(base.monthlyFixedCost)}/mo`, note: `Labor ${formatInr(inputs.labor)} + utilities ${formatInr(inputs.utilities)} + other ${formatInr(inputs.otherMonthlyCost)} + EMI ${formatInr(base.emi)}` },
-        { expression: `Contribution = ₹${inputs.sellingPricePerUnit} − ₹${inputs.rawMaterialPerUnit} = ₹${base.contributionPerUnit}/L`, note: "Sell price minus buy price" },
-        { expression: `Break-even = ${formatInr(base.monthlyFixedCost)} ÷ ₹${base.contributionPerUnit} = ${base.breakEvenUnits.toLocaleString("en-IN")} L/mo`, note: "Fixed costs ÷ contribution per unit" },
+        { expression: `Contribution = ₹${inputs.sellingPricePerUnit} − ₹${inputs.rawMaterialPerUnit} = ₹${base.contributionPerUnit}/${u}`, note: "Sell price minus input cost per unit" },
+        { expression: `Break-even = ${formatInr(base.monthlyFixedCost)} ÷ ₹${base.contributionPerUnit} = ${base.breakEvenUnits.toLocaleString("en-IN")} ${u}/mo`, note: "Fixed costs ÷ contribution per unit" },
         { expression: `Monthly profit = ${formatInr(base.monthlyRevenue)} − ${formatInr(base.monthlyVariableCost)} − ${formatInr(base.monthlyFixedCost)} = ${formatInr(base.operatingProfit)}`, note: "Revenue − variable − fixed" },
         { expression: `Break-even period ≈ ${base.breakEvenMonths} mo`, note: `(${formatInr(base.totalStartupCost)} startup + half working capital) ÷ ${formatInr(base.operatingProfit)}/mo` },
       ],
       text: "Every figure on every page comes from these exact formulas. Change any input in the model and they recompute instantly.",
-      chips: ["Open Simulator", "What if milk price falls?"],
+      chips: ["Open Simulator", scenarioQ],
       source: "AI ESTIMATE",
     };
   }
@@ -123,23 +128,23 @@ export function answerQuestion(
   // break-even
   if (q.includes("break-even") || q.includes("breakeven") || q.includes("break even")) {
     return {
-      headline: `You break even at ${base.breakEvenUnits.toLocaleString("en-IN")} L/month`,
+      headline: `You break even at ${base.breakEvenUnits.toLocaleString("en-IN")} ${u}/month`,
       metrics: [
         { label: "Break-even revenue", before: "—", after: formatInr(base.breakEvenRevenue) },
-        { label: "Planned volume", before: "—", after: `${inputs.unitsPerMonth.toLocaleString("en-IN")} L` },
+        { label: "Planned volume", before: "—", after: `${inputs.unitsPerMonth.toLocaleString("en-IN")} ${u}` },
         { label: "Payback period", before: "—", after: `${base.breakEvenMonths} mo` },
       ],
-      text: `Your safety cushion is ${Math.max(inputs.unitsPerMonth - base.breakEvenUnits, 0).toLocaleString("en-IN")} L/month (${Math.round((1 - base.breakEvenUnits / inputs.unitsPerMonth) * 100)}% headroom) before you start losing money.`,
+      text: `Your safety cushion is ${Math.max(inputs.unitsPerMonth - base.breakEvenUnits, 0).toLocaleString("en-IN")} ${u}/month (${Math.round((1 - base.breakEvenUnits / inputs.unitsPerMonth) * 100)}% headroom) before you start losing money.`,
       calcSteps: [
-        { expression: `${formatInr(base.monthlyFixedCost)} ÷ ₹${base.contributionPerUnit}/L = ${base.breakEvenUnits.toLocaleString("en-IN")} L/mo`, note: "Fixed costs ÷ contribution per unit" },
+        { expression: `${formatInr(base.monthlyFixedCost)} ÷ ₹${base.contributionPerUnit}/${u} = ${base.breakEvenUnits.toLocaleString("en-IN")} ${u}/mo`, note: "Fixed costs ÷ contribution per unit" },
       ],
-      chips: ["Show Calculation", "What if milk price falls?"],
+      chips: ["Show Calculation", scenarioQ],
       source: "AI ESTIMATE",
     };
   }
 
-  // price sensitivity
-  if (q.includes("milk price") || q.includes("price fall") || q.includes("price drop")) {
+  // price sensitivity — triggered by ANY pricing question about THIS business
+  if (q.includes("price") && (q.includes("fall") || q.includes("drop") || q.includes("rise") || q.includes("increase"))) {
     const stress = computeFinancials(applyScenario(inputs, SCENARIOS.stress.adj));
     return {
       headline: "Stress test: −10% price, −35% volume",
@@ -148,7 +153,7 @@ export function answerQuestion(
         { label: "Profit", before: formatInr(base.operatingProfit), after: formatInr(stress.operatingProfit) },
         { label: "Break-even", before: `${base.breakEvenMonths} mo`, after: `${stress.breakEvenMonths} mo` },
       ],
-      text: `Your business becomes sensitive below ₹${(inputs.sellingPricePerUnit * 0.93).toFixed(0)}/L. Protect price with direct household sales and fixed-rate tea-stall contracts instead of matching competitor cuts.`,
+      text: `At your modeled economics, profit turns sensitive below ₹${(inputs.sellingPricePerUnit * 0.93).toFixed(0)}/${u}. Protect your price with direct customer relationships and fixed-rate supply agreements instead of matching competitor cuts.`,
       chips: ["Open Simulator", "Compare scenarios"],
       source: "AI ESTIMATE",
     };
@@ -178,7 +183,7 @@ export function answerQuestion(
         { label: "Fixed cost", before: "—", after: formatInr(base.monthlyFixedCost) },
         { label: "Annual profit", before: "—", after: formatInr(base.annualProfit) },
       ],
-      text: `Every ₹1/L added to your selling price adds about ${formatInr(inputs.unitsPerMonth)}/month to profit — the single most powerful lever in your model.`,
+      text: `Every ₹1/${u} added to your selling price adds about ${formatInr(inputs.unitsPerMonth)}/month to profit — the single most powerful lever in your model.`,
       chips: ["Show Calculation", "Open Simulator"],
       source: "AI ESTIMATE",
     };

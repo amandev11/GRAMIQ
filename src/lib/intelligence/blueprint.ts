@@ -5,8 +5,9 @@
  */
 import { COMPARISON_CANDIDATES } from "@/lib/data/demo";
 import { computeFinancials, formatInr } from "@/lib/finance/engine";
+import { detectBusinessModel } from "@/lib/intelligence/business-model";
 import { L, pick, type Lang } from "@/lib/i18n/strings";
-import type { EntrepreneurProfile, FinancialInputs, FinancialResults } from "@/lib/types";
+import type { EntrepreneurProfile, FinancialInputs } from "@/lib/types";
 
 export interface Blueprint {
   businessName: string;
@@ -17,51 +18,62 @@ export interface Blueprint {
   monthlyExpenses: { label: string; amount: number }[];
   marketOpportunity: string[];
   fundingOptions: string[];
-  results: FinancialResults;
+  results: ReturnType<typeof computeFinancials>;
 }
 
 export function generateBlueprint(profile: EntrepreneurProfile, f: FinancialInputs): Blueprint {
   const r = computeFinancials(f);
   const lang: Lang = profile.language ?? "en";
   const t = L.blueprint;
+  // The business NAME and narrative derive from the DETECTED model —
+  // never from a hardcoded demo idea.
+  const model = detectBusinessModel(profile.businessIdea);
+  const segments = pick(model.segments, lang) as [string, string, string];
   return {
-    businessName: pick(t.businessName, lang),
+    businessName: model.label,
     overview: pick(t.overview({
       name: profile.name,
+      idea: profile.businessIdea,
       village: profile.location.village,
       district: profile.location.district,
       state: profile.location.state,
       units: f.unitsPerMonth.toLocaleString("en-IN"),
       price: f.sellingPricePerUnit,
       cost: f.rawMaterialPerUnit,
+      unitShort: model.unitShort,
+      unitLong: model.unitLong,
     }), lang),
-    whyThisBusiness: pick(t.whyThisBusiness({
-      capital: profile.capital.toLocaleString("en-IN"),
-      resource: profile.resources[0] ?? "available",
-    }), lang),
+    whyThisBusiness: [
+      pick(model.whyPoint, lang),
+      ...pick(t.whyGeneric({
+        capital: profile.capital.toLocaleString("en-IN"),
+        resource: profile.resources[0] ?? "available",
+      }), lang),
+    ],
     investmentBreakdown: pick(t.investmentBreakdown, lang).map((it, i) => ({
       ...it,
       amount: [f.equipmentCost, f.inventoryCost, f.otherSetupCost][i] ?? 0,
     })),
     // Revenue model mixes ₹ figures with translatable framing — keep numbers, localize verbs
     revenueModel: (() => {
-      const buy = `₹${f.rawMaterialPerUnit}/L`;
-      const sell = `₹${f.sellingPricePerUnit}/L`;
-      const margin = `₹${r.contributionPerUnit}/L`;
+      const buy = `₹${f.rawMaterialPerUnit}/${model.unitShort}`;
+      const sell = `₹${f.sellingPricePerUnit}/${model.unitShort}`;
+      const margin = `₹${r.contributionPerUnit}/${model.unitShort}`;
       const units = f.unitsPerMonth.toLocaleString("en-IN");
       const gross = formatInr(r.grossProfit);
-      const buySell: Record<Lang, string> = {
-        en: `Buy at ${buy} → sell at ${sell}. Margin of ${margin} × ${units} L/month = ${gross} gross profit before fixed costs.`,
-        hi: `ख़रीद ${buy} → बिक्री ${sell}। मार्जिन ${margin} × ${units} ली./माह = ${gross} निश्चित लागत से पहले सकल लाभ।`,
-        hinglish: `Buy ${buy} → sell ${sell}. Margin ${margin} × ${units} L/month = ${gross} gross profit before fixed costs.`,
+      const u = model.unitShort;
+      const text: Record<Lang, string> = {
+        en: `Deliver at ${sell} against an input cost of ${buy}. Margin of ${margin} × ${units} ${u}/month = ${gross} gross profit before fixed costs.`,
+        hi: `${sell} पर बिक्री, इनपुट लागत ${buy}। मार्जिन ${margin} × ${units} ${u}/माह = निश्चित लागत से पहले ${gross} सकल लाभ।`,
+        hinglish: `${sell} par sale, input cost ${buy}. Margin ${margin} × ${units} ${u}/month = fixed costs se pehle ${gross} gross profit.`,
       };
-      return buySell[lang];
+      return text[lang];
     })(),
     monthlyExpenses: pick(t.monthlyExpenses, lang).map((it, i) => ({
       ...it,
       amount: [f.labor, f.utilities, f.otherMonthlyCost, f.rent, r.emi][i] ?? 0,
     })),
-    marketOpportunity: pick(t.marketOpportunity({ village: profile.location.village }), lang),
+    marketOpportunity: pick(t.marketOpportunity({ village: profile.location.village, segA: segments[0], segB: segments[1] }), lang),
     fundingOptions: pick(t.fundingOptions, lang),
     results: r,
   };

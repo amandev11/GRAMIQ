@@ -55,110 +55,104 @@ export const REPORT_SECTIONS: Record<Lang, { key: string; title: string }[]> = {
 export const L = {
   /* ── Blueprint ── */
   blueprint: {
-    businessName: {
-      en: "Small Dairy Enterprise",
-      hi: "लघु डेयरी उद्यम",
-      hinglish: "Small Dairy Enterprise",
-    },
+    // NOTE: the business NAME comes from the detected business model
+    // (see lib/intelligence/business-model.ts) — never a hardcoded title.
     overview: (vars: {
-      name: string; village: string; district: string; state: string;
-      units: string; price: number; cost: number;
+      name: string; idea: string; village: string; district: string; state: string;
+      units: string; price: number; cost: number; unitShort: string; unitLong: string;
     }) => ({
-      en: `${vars.name} plans to collect milk from small farmers around ${vars.village} (${vars.district}, ${vars.state}) and sell to households and shops. The model runs on ${vars.units} litres/month at ₹${vars.price}/L against a collection cost of ₹${vars.cost}/L.`,
-      hi: `${vars.name} ${vars.village} (${vars.district}, ${vars.state}) के पास छोटे किसानों से दूध इकट्ठा कर घरों और दुकानों को बेचने का प्लान बना रहे हैं। यह मॉडल ${vars.units} लीटर/माह पर ₹${vars.price}/लीटर बिक्री और ₹${vars.cost}/लीटर संग्रह लागत पर चलता है।`,
-      hinglish: `${vars.name} ${vars.village} (${vars.district}, ${vars.state}) ke paas chhote kisano se doodh ikattha kar ghar aur dukanon ko bechne ka plan ban rahe hain. Model ${vars.units} litre/month par ₹${vars.price}/L par chalta hai, collection cost ₹${vars.cost}/L.`,
+      en: `${vars.name} plans to start: ${vars.idea} — based in ${vars.village} (${vars.district}, ${vars.state}). The working model processes ${vars.units} ${vars.unitLong}s/month at ₹${vars.price}/${vars.unitShort} against a per-unit input cost of ₹${vars.cost}/${vars.unitShort}. All figures are modeled assumptions scaled to your stated capital (AI ESTIMATE).`,
+      hi: `${vars.name} शुरू करने की योजना बना रहे हैं: ${vars.idea} — ${vars.village} (${vars.district}, ${vars.state}) में। कार्यशील मॉडल ₹${vars.price}/${vars.unitShort} पर ${vars.units} ${vars.unitLong}/माह संसाधित करता है, प्रति-इकाई इनपुट लागत ₹${vars.cost}/${vars.unitShort} है। सभी आँकड़े आपकी बताई पूँजी पर आधारित मॉडलित अनुमान हैं (AI ESTIMATE)।`,
+      hinglish: `${vars.name} shuru karne ka plan bana rahe hain: ${vars.idea} — ${vars.village} (${vars.district}, ${vars.state}) mein. Working model ₹${vars.price}/${vars.unitShort} par ${vars.units} ${vars.unitLong}/month process karta hai, per-unit input cost ₹${vars.cost}/${vars.unitShort}. Saare figures aapke batayi capital par scaled modeled assumptions hain (AI ESTIMATE).`,
     }),
-    whyThisBusiness: (vars: { capital: string; resource: string }) => ({
+    whyGeneric: (vars: { capital: string; resource: string }) => ({
       en: [
-        "Daily cash collection — no long credit cycles like crop businesses.",
-        `Uses existing family labor (${vars.resource ?? "available"}), keeping fixed costs low.`,
-        "Steady everyday demand; milk is bought in good and bad months alike.",
-        `Small starting capital fits your available ₹${vars.capital}.`,
+        `Uses resources you already have (${vars.resource ?? "available"}), keeping fixed costs low.`,
+        "Demand profile matches everyday local spending rather than one-off purchases.",
+        `Startup scale fits your available ₹${vars.capital} without heavy borrowing.`,
       ],
       hi: [
-        "रोज़ नकद वसूली — फसल व्यवसायों जैसे लंबे क्रेडिट चक्र नहीं।",
-        `पहले से उपलब्ध परिवार का श्रम (${vars.resource ?? "उपलब्ध"}) इस्तेमाल करता है, जिससे निश्चित लागत कम रहती है।`,
-        "स्थिर रोज़मर्रा की माँग; दूध अच्छे और बुरे दोनों महीनों में बिकता है।",
-        `छोटी शुरुआती पूँजी आपकी उपलब्ध ₹${vars.capital} के अनुरूप है।`,
+        `आपके पहले से उपलब्ध संसाधनों (${vars.resource ?? "उपलब्ध"}) का उपयोग करता है, जिससे निश्चित लागत कम रहती है।`,
+        "माँग प्रोफ़ाइल एकमुश्त खरीद के बजाय रोज़मर्रा के स्थानीय खर्च से मेल खाती है।",
+        `शुरुआती पैमाना भारी उधार के बिना आपकी उपलब्ध ₹${vars.capital} में fit है।`,
       ],
       hinglish: [
-        "Daily cash collection — crop business jaisa long credit cycle nahi padta.",
-        `Existing family labor (${vars.resource ?? "available"}) use karta hai, isse fixed cost kam rehta hai.`,
-        "Steady everyday demand; doodh achhe aur bure dono mahine bikta hai.",
-        `Chhoti starting capital aapki available ₹${vars.capital} ke hisaab se fit hai.`,
+        `Aapke already available resources (${vars.resource ?? "available"}) use karta hai, fixed costs kam rehte hain.`,
+        "Demand profile rozana local spending se match karti hai, one-off purchase nahi.",
+        `Startup scale heavy borrowing ke bina aapke available ₹${vars.capital} mein fit hai.`,
       ],
     }),
     investmentBreakdown: {
       en: [
-        { label: "Equipment (cans, testing kit, cooler share)" },
-        { label: "Initial working stock" },
-        { label: "Setup & licenses" },
+        { label: "Equipment & core setup" },
+        { label: "Initial stock / inputs" },
+        { label: "Licenses & registration" },
       ],
       hi: [
-        { label: "उपकरण (कैन, टेस्टिंग किट, कूलर हिस्सा)" },
-        { label: "शुरुआती कार्यशील स्टॉक" },
-        { label: "स्थापना और लाइसेंस" },
+        { label: "उपकरण और मुख्य सेटअप" },
+        { label: "शुरुआती स्टॉक / इनपुट" },
+        { label: "लाइसेंस और पंजीकरण" },
       ],
       hinglish: [
-        { label: "Equipment (cans, testing kit, cooler share)" },
-        { label: "Initial working stock" },
-        { label: "Setup & licenses" },
+        { label: "Equipment aur core setup" },
+        { label: "Initial stock / inputs" },
+        { label: "Licenses aur registration" },
       ],
     } as Record<Lang, { label: string }[]>,
     monthlyExpenses: {
       en: [
         { label: "Labor" },
-        { label: "Utilities (electricity, chiller share)" },
+        { label: "Utilities (electricity, water)" },
         { label: "Transport & misc" },
         { label: "Rent" },
         { label: "Loan EMI" },
       ],
       hi: [
         { label: "मज़दूरी" },
-        { label: "उपयोगिताएँ (बिजली, चिलर हिस्सा)" },
+        { label: "उपयोगिताएँ (बिजली, पानी)" },
         { label: "परिवहन और विविध" },
         { label: "किराया" },
         { label: "ऋण EMI" },
       ],
       hinglish: [
         { label: "Labor" },
-        { label: "Utilities (electricity, chiller share)" },
-        { label: "Transport & misc" },
+        { label: "Utilities (bijli, paani)" },
+        { label: "Transport aur misc" },
         { label: "Rent" },
         { label: "Loan EMI" },
       ],
     } as Record<Lang, { label: string }[]>,
-    marketOpportunity: (vars: { village: string }) => ({
+    marketOpportunity: (vars: { village: string; segA: string; segB: string }) => ({
       en: [
-        `DEMO DATA: ~180 households within 4 km of ${vars.village} buy milk daily.`,
-        "DEMO DATA: 12 tea stalls on the highway belt have no formal milk contract.",
-        "AI ESTIMATE: capturing 35–40% of nearby household demand covers your planned volume.",
+        `DEMO DATA: mapped demand points around ${vars.village} — strongest signal from ${vars.segA.toLowerCase()}.`,
+        `DEMO DATA: an underserved pocket near ${vars.segB.toLowerCase()} has no established seller.`,
+        "AI ESTIMATE: capturing 35–40% of nearby demand covers your planned volume.",
       ],
       hi: [
-        `DEMO DATA: ${vars.village} के 4 किमी भीतर ~180 घर रोज़ दूध खरीदते हैं।`,
-        "DEMO DATA: हाईवे पट्टी पर 12 चाय की दुकानों का कोई औपचारिक दूध अनुबंध नहीं है।",
-        "AI ESTIMATE: पास के घरों की माँग का 35–40% पकड़ना आपकी योजनित मात्रा को कवर करता है।",
+        `DEMO DATA: ${vars.village} के आसपास मैप किए गए माँग बिंदु — सबसे मज़बूत संकेत ${vars.segA} से।`,
+        `DEMO DATA: ${vars.segB} के पास एक अप्रबधि क्षेत्र है जहाँ कोई स्थापित विक्रेता नहीं है।`,
+        "AI ESTIMATE: पास की माँग का 35–40% पकड़ना आपकी योजनित मात्रा को कवर करता है।",
       ],
       hinglish: [
-        `DEMO DATA: ${vars.village} ke 4 km ke andar ~180 households roz doodh kharidte hain.`,
-        "DEMO DATA: Highway belt par 12 chai stalls ka koi formal milk contract nahi hai.",
-        "AI ESTIMATE: Paas ke households ki demand ka 35–40% pakadna aapki planned volume cover kar deta hai.",
+        `DEMO DATA: ${vars.village} ke aas-paas mapped demand points — sabse strong signal ${vars.segA} se.`,
+        `DEMO DATA: ${vars.segB} ke paas ek underserved pocket hai jahan koi established seller nahi.`,
+        "AI ESTIMATE: Paas ki demand ka 35–40% pakadna planned volume cover kar deta hai.",
       ],
     }),
     fundingOptions: {
       en: [
         "Self-funding from savings (current plan)",
-        "DEMO: dairy development subsidy — see Funding & Schemes page",
+        "DEMO: sector-specific support subsidy — see Funding & Schemes page",
         "DEMO: collateral-free micro credit line for working capital",
       ],
       hi: [
         "बचत से स्वयं वित्तपोषण (वर्तमान योजना)",
-        "DEMO: डेयरी विकास सब्सिडी — वित्तपोषण और योजनाएँ पृष्ठ देखें",
+        "DEMO: क्षेत्र-विशिष्ट सहायता सब्सिडी — वित्तपोषण और योजनाएँ पृष्ठ देखें",
         "DEMO: कार्यशील पूँजी के लिए बिना गिरवी लघु क्रेडिट लाइन",
       ],
       hinglish: [
         "Self-funding from savings (current plan)",
-        "DEMO: dairy development subsidy — Funding & Schemes page dekho",
+        "DEMO: sector-specific support subsidy — Funding & Schemes page dekho",
         "DEMO: collateral-free micro credit line for working capital",
       ],
     } as Record<Lang, string[]>,
@@ -174,22 +168,22 @@ export const L = {
         hinglish: `Projected operating profit ${vars.profit}/month at ${vars.margin}% margin — yeh score drive karta hai.`,
       }),
       improvement: {
-        en: "Raise contribution per unit by ₹2–3/L via direct household sales instead of shop-only supply.",
-        hi: "केवल दुकान आपूर्ति के बजाय प्रत्यक्ष घर विक्री से प्रति इकाई योगदान ₹2–3/लीटर बढ़ाएँ।",
-        hinglish: "Contribution per unit ₹2–3/L badhao — direct household sales se, sirf shop supply ke bajaye.",
+        en: "Raise your per-unit contribution by ₹2–3 through direct customer sales instead of middlemen-only supply.",
+        hi: "बिचौलियों-आधारित आपूर्ति के बजाय सीधे ग्राहक बिक्री से प्रति-इकाई योगदान ₹2–3 बढ़ाएँ।",
+        hinglish: "Per-unit contribution ₹2–3 badhao — direct customer sales se, sirf middlemen supply ke bajaye.",
       },
     },
     market: {
       label: { en: "Market Opportunity", hi: "बाज़ार अवसर", hinglish: "Market Opportunity" },
-      explanation: (vars: { units: string; village: string; district: string }) => ({
-        en: `Planned volume of ${vars.units} L/month against local demand signals in ${vars.village}, ${vars.district}.`,
-        hi: `${vars.units} ली./माह की योजनित मात्रा, ${vars.village}, ${vars.district} में स्थानीय माँग संकेतों के विरुद्ध।`,
-        hinglish: `Planned volume ${vars.units} L/month against local demand signals in ${vars.village}, ${vars.district}.`,
+      explanation: (vars: { units: string; unit: string; village: string; district: string }) => ({
+        en: `Planned volume of ${vars.units} ${vars.unit}/month against local demand signals in ${vars.village}, ${vars.district}.`,
+        hi: `${vars.units} ${vars.unit}/माह की योजनित मात्रा, ${vars.village}, ${vars.district} में स्थानीय माँग संकेतों के विरुद्ध।`,
+        hinglish: `Planned volume ${vars.units} ${vars.unit}/month against local demand signals in ${vars.village}, ${vars.district}.`,
       }),
       improvement: {
-        en: "Sign 3–4 tea stalls on the highway belt for fixed daily offtake.",
-        hi: "निश्चित दैनिक अपलेक के लिए हाईवे पट्टी पर 3–4 चाय दुकानें जोड़ें।",
-        hinglish: "Highway belt par 3–4 chai stalls sign karo for fixed daily offtake.",
+        en: "Sign 3–4 regular bulk buyers for fixed weekly offtake before scaling volume.",
+        hi: "मात्रा बढ़ाने से पहले 3–4 नियमित थोक खरीदारों के साथ निश्चित साप्ताहिक खरीद तय करें।",
+        hinglish: "Volume scale karne se pehle 3–4 regular bulk buyers ke saath fixed weekly offtake sign karo.",
       },
     },
     risk: {
@@ -226,9 +220,9 @@ export const L = {
         hinglish: `${vars.count} resource advantage(s) recorded, including family labor support.`,
       }),
       improvement: {
-        en: "Fix a cold-chain arrangement (shared cooler) before summer months.",
-        hi: "गर्मियों से पहले शीत-शृंखला व्यवस्था (साझा कूलर) तय करें।",
-        hinglish: "Summer se pehle cold-chain arrangement (shared cooler) fix karo.",
+        en: "Service or replace your most critical equipment before peak season.",
+        hi: "पीक सीज़न से पहले अपने सबसे महत्वपूर्ण उपकरण की सर्विस/बदलाव करें।",
+        hinglish: "Peak season se pehle apna sabse critical equipment service/replace karo.",
       },
     },
   },
@@ -292,9 +286,9 @@ export const L = {
     competition: {
       title: { en: "Established Local Seller", hi: "स्थापित स्थानीय विक्रेता", hinglish: "Established Local Seller" },
       why: {
-        en: "DEMO DATA shows an existing private milk seller on the main route selling at ₹47–48/L.",
-        hi: "DEMO DATA मुख्य रूट पर एक मौजूदा निजी दूध विक्रेता ₹47–48/लीटर पर बेचता है।",
-        hinglish: "DEMO DATA main route par ek existing private milk seller ₹47–48/L par bechta hai.",
+        en: "DEMO DATA shows an established seller already serving your main market area.",
+        hi: "DEMO DATA दिखाता है कि एक स्थापित विक्रेता पहले से आपके मुख्य बाज़ार क्षेत्र में सेवा दे रहा है।",
+        hinglish: "DEMO DATA dikha raha hai ki ek established seller pehle se aapke main market area mein serve karta hai.",
       },
       impact: {
         en: "Price undercutting on overlapping streets could slow customer acquisition.",
@@ -308,21 +302,21 @@ export const L = {
       },
     },
     weather: {
-      title: { en: "Summer Spoilage & Cold Chain", hi: "गर्मी खराबी और शीत-शृंखला", hinglish: "Summer Spoilage & Cold Chain" },
+      title: { en: "Season & Environment Risk", hi: "मौसम और पर्यावरण जोखिम", hinglish: "Season & Environment Risk" },
       why: {
-        en: "Rajasthan summer temperatures raise spoilage risk without reliable cooling.",
-        hi: "राजस्थान की गर्मियों के तापमान भरोसेमंद कूलिंग के बिना खराबी का जोखिम बढ़ाते हैं।",
-        hinglish: "Rajasthan summer temperature reliable cooling ke bina spoilage risk badhata hai.",
+        en: "Seasonal shifts (summer heat, monsoon, festival cycles) can disrupt supply, demand or input costs.",
+        hi: "मौसमी बदलाव (गर्मी, मानसून, त्योहार चक्र) आपूर्ति, माँग या इनपुट लागत को बाधित कर सकते हैं।",
+        hinglish: "Seasonal shifts (garmi, monsoon, festival cycles) supply, demand ya input costs disturb kar sakte hain.",
       },
       impact: {
-        en: "Spoilage above 3% can erase roughly half your monthly profit (AI ESTIMATE).",
-        hi: "3% से ऊपर खराबी आपके मासिक लाभ का लगभग आधा हिस्सा मिटा सकती है (AI ESTIMATE)।",
-        hinglish: "3% se upar spoilage aapke monthly profit ka roughly aadha hissa mita sakti hai (AI ESTIMATE).",
+        en: "AI ESTIMATE: one disrupted season can cut monthly profit by 30–50% if unprepared.",
+        hi: "AI ESTIMATE: तैयारी न होने पर एक बाधित मौसम मासिक लाभ को 30–50% तक कम कर सकता है।",
+        hinglish: "AI ESTIMATE: unprepared ho to ek disrupted season monthly profit 30–50% tak cut kar sakta hai.",
       },
       mitigation: {
-        en: "Arrange shared chiller access and plan morning-only delivery in May–July.",
-        hi: "साझा चिलर पहुँच की व्यवस्था करें और मई–जुलाई में केवल सुबह डिलीवरी की योजना बनाएँ।",
-        hinglish: "Shared chiller access arrange karo aur May–July mein morning-only delivery plan banao.",
+        en: "Plan for the weakest season: buffer stock/cash and a backup supplier before it arrives.",
+        hi: "सबसे कमज़ोर मौसम के लिए योजना बनाएँ: उससे पहले बफर स्टॉक/नकदी और बैकअप आपूर्तिकर्ता तय करें।",
+        hinglish: "Weakest season ke liye plan banao: usse pehle buffer stock/cash aur backup supplier fix karo.",
       },
     },
     funding: {
@@ -355,61 +349,46 @@ export const L = {
       reach: { en: "Market Reach", hi: "बाज़ार पहुँच", hinglish: "Market Reach" },
       logistics: { en: "Logistics Ease", hi: "रसद सहजता", hinglish: "Logistics Ease" },
     },
-    demandSegments: {
-      households: { en: "Households", hi: "घर", hinglish: "Households" },
-      teaStalls: { en: "Tea stalls", hi: "चाय दुकानें", hinglish: "Tea stalls" },
-      shops: { en: "Shops", hi: "दुकानें", hinglish: "Shops" },
-    },
+    // NOTE: demand segments now come from the detected business model
+    // (see business-model.ts) — not from hardcoded dairy segments.
   },
 
-  /* ── Action plan task text ── */
-  actionPlan: [
-    { en: "Talk to 10 households about milk price they pay today", hi: "10 घरों से उनके द्वारा आज दूध मूल्य पूछें", hinglish: "10 households se unka doodh price pata karo" },
-    { en: "Meet Farmer Collection Points A & B about daily supply", hi: "किसान संग्रह बिंदु A और B से दैनिक आपूर्ति मिलें", hinglish: "Farmer Collection Points A & B se daily supply ke baare mein milo" },
-    { en: "Price milk cans, testing kit and cooling arrangement", hi: "दूध कैन, टेस्टिंग किट और कूलिंग व्यवस्था का मूल्य लगाएँ", hinglish: "Milk cans, testing kit aur cooling arrangement price lagao" },
-    { en: "Finalize supplier rates and write them into your plan", hi: "आपूर्तिकर्ता दरें अंतिम करें और उन्हें अपनी योजना में लिखें", hinglish: "Supplier rates finalize karo aur plan mein likho" },
-    { en: "Open/confirm a current account for business collections", hi: "व्यापार संग्रह के लिए चालू खाता खोलें/पुष्टि करें", hinglish: "Business collections ke liye current account open/confirm karo" },
-    { en: "Check eligibility for demo dairy support scheme at district office", hi: "ज़िला कार्यालय में डेयरी सहायता योजना पात्रता जाँचें", hinglish: "District office mein demo dairy support scheme eligibility check karo" },
-    { en: "Launch pilot route with 40 households", hi: "40 घरों के साथ पायलट रूट शुरू करें", hinglish: "40 households ke saath pilot route launch karo" },
-    { en: "Track daily collections vs wastage; keep spoilage under 2%", hi: "दैनिक संग्रह बनाम क्षय पर नज़र रखें; खराबी 2% से नीचे रखें", hinglish: "Daily collections vs wastage track karo; spoilage 2% se neeche rakh lo" },
-    { en: "Review actual vs planned profit with GRAMIQ copilot", hi: "GRAMIQ कोपायलट से वास्तविक बनाम योजनित लाभ समीक्षा करें", hinglish: "GRAMIQ copilot se actual vs planned profit review karo" },
-    { en: "Add value-added products (paneer/curd) if margin allows", hi: "यदि मार्जिन अनुमति दे तो मूल्य-वर्धित उत्पाद (पनीर/दही) जोड़ें", hinglish: "Margin allow kare to value-added products (paneer/curd) add karo" },
-    { en: "Hire one delivery helper during peak months", hi: "चरम माह में एक डिलीवरी सहायक रखें", hinglish: "Peak months mein ek delivery helper hire karo" },
-    { en: "Re-run stress test and set aside 1 month of costs as buffer", hi: "तनाव परीक्षण दोबारा चलाएँ और 1 माह की लागत बफर रूप में रखें", hinglish: "Stress test re-run karo aur 1 month ki cost buffer rakh do" },
-  ],
+  /* ── Action plan task text ──
+   * Action plans now derive from the user's ACTUAL idea —
+   * see lib/intelligence/action-plan.ts (buildActionPlan). */
 
   /* ── Business plan report narrative ── */
   report: {
     coverLabel: { en: "GRAMIQ Business Plan", hi: "GRAMIQ व्यापार योजना", hinglish: "GRAMIQ Business Plan" },
-    title: { en: "Small Dairy Enterprise", hi: "लघु डेयरी उद्यम", hinglish: "Small Dairy Enterprise" },
+    // NOTE: report title comes from the detected business model — not hardcoded.
     preparedBy: { en: "Prepared by GRAMIQ", hi: "GRAMIQ द्वारा तैयार", hinglish: "Prepared by GRAMIQ" },
     summary: (vars: {
-      name: string; village: string; startup: string; capital: string;
+      name: string; idea: string; village: string; startup: string; capital: string;
       revenue: string; be: string;
     }) => ({
-      en: `${vars.name} plans to establish a small dairy collection-and-sale enterprise in ${vars.village}. With a startup investment of ${vars.startup} against ${vars.capital} of available capital, the business is projected to generate ${vars.revenue} monthly revenue at planned volume and reach break-even in approximately ${vars.be} months. All financial projections are deterministic model outputs based on the stated assumptions (AI ESTIMATE); they are not guarantees.`,
-      hi: `${vars.name} ${vars.village} में एक लघु डेयरी संग्रह-और-विक्रय उद्यम स्थापित करने की योजना बना रहे हैं। ${vars.startup} के शुरुआती निवेश के साथ, ${vars.capital} उपलब्ध पूँजी के विरुद्ध, व्यवसाय से योजनित मात्रा पर ${vars.revenue} मासिक आय अनुमानित है और लगभग ${vars.be} माह में ब्रेक-ईन होने की उम्मीद है। सभी वित्तीय अनुमान बताए गए धारणाओं पर आधारित निर्धारक मॉडल आउटपुट हैं (AI ESTIMATE); ये गारंटी नहीं हैं।`,
-      hinglish: `${vars.name} ${vars.village} mein ek small dairy collection-and-sale enterprise start karne ka plan ban rahe hain. ${vars.startup} startup investment ke saath, ${vars.capital} available capital ke against, business se planned volume par ${vars.revenue} monthly revenue projected hai aur approximately ${vars.be} months mein break-even ki ummeed hai. Saare financial projections stated assumptions par based deterministic model outputs hain (AI ESTIMATE); yeh guarantee nahi hain.`,
+      en: `${vars.name} plans to establish the following business in ${vars.village}: ${vars.idea}. With a startup investment of ${vars.startup} against ${vars.capital} of available capital, the business is projected to generate ${vars.revenue} monthly revenue at planned volume and reach break-even in approximately ${vars.be} months. All financial projections are deterministic model outputs based on the stated assumptions (AI ESTIMATE); they are not guarantees.`,
+      hi: `${vars.name} ${vars.village} में निम्न व्यवसाय स्थापित करने की योजना बना रहे हैं: ${vars.idea}। ${vars.startup} के शुरुआती निवेश के साथ, ${vars.capital} उपलब्ध पूँजी के विरुद्ध, व्यवसाय से योजनित मात्रा पर ${vars.revenue} मासिक आय अनुमानित है और लगभग ${vars.be} माह में ब्रेक-ईन होने की उम्मीद है। सभी वित्तीय अनुमान बताए गए धारणाओं पर आधारित निर्धारक मॉडल आउटपुट हैं (AI ESTIMATE); ये गारंटी नहीं हैं।`,
+      hinglish: `${vars.name} ${vars.village} mein yeh business start karne ka plan bana rahe hain: ${vars.idea}. ${vars.startup} startup investment ke saath, ${vars.capital} available capital ke against, business se planned volume par ${vars.revenue} monthly revenue projected hai aur approximately ${vars.be} months mein break-even ki ummeed hai. Saare financial projections stated assumptions par based deterministic model outputs hain (AI ESTIMATE); yeh guarantee nahi hain.`,
     }),
     ideaBody: {
-      en: "Revenue comes from daily household delivery, shop supply and tea-stall contracts. Value-added products (curd, paneer) are a year-two expansion option once the base route is stable.",
-      hi: "आय दैनिक घर डिलीवरी, दुकान आपूर्ति और चाय-दुकान अनुबंधों से आती है। मूल्य-वर्धित उत्पाद (दही, पनीर) आधार रूट स्थिर होने के बाद दूसरे वर्ष के विस्तार विकल्प हैं।",
-      hinglish: "Revenue daily household delivery, shop supply aur tea-stall contracts se aati hai. Value-added products (curd, paneer) base route stable hone ke baad year-two expansion option hain.",
-    },
-    marketBullets: () => ({
+      en: "Revenue comes from the customer segments identified in the market analysis below, with direct customer sales as the primary channel. Expansion options (value-added products, a second location or higher volume) are year-two choices once the base operation is stable.",
+      hi: "आय नीचे बाज़ार विश्लेषण में पहचाने गए ग्राहक वर्गों से आती है, जिसमें सीधे ग्राहक बिक्री मुख्य माध्यम है। विस्तार विकल्प (मूल्य-वर्धित उत्पाद, दूसरा स्थान या अधिक मात्रा) आधारभूत संचालन स्थिर होने के बाद दूसरे वर्ष के विकल्प हैं।",
+      hinglish: "Revenue neeche market analysis mein identify kiye gaye customer segments se aata hai — direct customer sales primary channel hai. Expansion options (value-added products, second location, higher volume) base operation stable hone ke baad year-two choices hain.",
+    } as Record<Lang, string>,
+    marketBullets: (vars: { village: string }) => ({
       en: [
-        `DEMO DATA: ~180 households within 4 km purchase milk daily.`,
-        `DEMO DATA: two farmer collection points within 4 km; ~320 L/day combined potential.`,
+        `DEMO DATA: demand points mapped within ~7 km of ${vars.village} (see Market page for the map).`,
+        `DEMO DATA: supplier points within ~4 km keep input logistics short.`,
         `AI ESTIMATE: capturing 35–40% of nearby demand covers the planned volume.`,
       ],
       hi: [
-        `DEMO DATA: 4 किमी भीतर ~180 घर रोज़ दूध खरीदते हैं।`,
-        `DEMO DATA: 4 किमी भीतर दो किसान संग्रह बिंदु; संयुक्त ~320 ली./दिन क्षमता।`,
+        `DEMO DATA: ${vars.village} के ~7 किमी भीतर माँग बिंदु मैप किए गए (नक्शा मार्केट पेज पर देखें)।`,
+        `DEMO DATA: ~4 किमी भीतर आपूर्ति बिंदु इनपुट लॉजिस्टिक्स को छोटा रखते हैं।`,
         `AI ESTIMATE: पास की माँग का 35–40% पकड़ना योजनित मात्रा को कवर करता है।`,
       ],
       hinglish: [
-        `DEMO DATA: 4 km ke andar ~180 households roz doodh kharidte hain.`,
-        `DEMO DATA: 4 km ke andar two farmer collection points; ~320 L/day combined potential.`,
+        `DEMO DATA: ${vars.village} ke ~7 km ke andar demand points mapped hain (map Market page par dekho).`,
+        `DEMO DATA: ~4 km ke andar supplier points input logistics short rakhte hain.`,
         `AI ESTIMATE: Paas ki demand ka 35–40% pakadna planned volume cover karta hai.`,
       ],
     }),

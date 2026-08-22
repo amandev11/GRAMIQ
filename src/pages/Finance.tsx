@@ -6,6 +6,7 @@ import { useBusiness } from "@/context/BusinessProvider";
 import {
   applyScenario, computeFinancials, formatInr, project12Months, SCENARIOS,
 } from "@/lib/finance/engine";
+import { detectBusinessModel } from "@/lib/intelligence/business-model";
 import { cn } from "@/lib/utils";
 import type { FinancialInputs } from "@/lib/types";
 import { motion } from "framer-motion";
@@ -129,9 +130,11 @@ function BreakEvenTimeline({ before, after }: { before: number; after: number })
 function ModelEditor({
   financials,
   onChange,
+  unit,
 }: {
   financials: FinancialInputs;
   onChange: (f: Partial<FinancialInputs>) => void;
+  unit: string;
 }) {
   const fields: Array<{ key: keyof FinancialInputs; label: string }> = [
     { key: "workingCapital", label: "Working capital (₹)" },
@@ -140,9 +143,9 @@ function ModelEditor({
     { key: "otherSetupCost", label: "Setup & licenses (₹)" },
     { key: "labor", label: "Labor / month (₹)" },
     { key: "utilities", label: "Utilities / month (₹)" },
-    { key: "rawMaterialPerUnit", label: "Buy price per L (₹)" },
-    { key: "sellingPricePerUnit", label: "Sell price per L (₹)" },
-    { key: "unitsPerMonth", label: "Volume (L / month)" },
+    { key: "rawMaterialPerUnit", label: `Input cost per ${unit} (₹)` },
+    { key: "sellingPricePerUnit", label: `Selling price per ${unit} (₹)` },
+    { key: "unitsPerMonth", label: `Volume (${unit} / month)` },
     { key: "otherMonthlyCost", label: "Other monthly cost (₹)" },
   ];
   return (
@@ -178,6 +181,10 @@ export default function Finance() {
   });
   if (!profile) return null;
 
+  // Unit labels & scenario questions derive from the user's ACTUAL business.
+  const model = detectBusinessModel(profile.businessIdea);
+  const u = model.unitShort;
+
   const base = computeFinancials(financials);
 
   // Cheap deterministic recomputation — no need for memoization.
@@ -200,14 +207,14 @@ export default function Finance() {
 
   const aiInsight = (() => {
     if (sim.materialFactor > 1.08)
-      return "Raw material cost is up significantly — your margin is sensitive to collection price. Lock weekly rates with 2+ suppliers or add ₹1/L to household prices.";
+      return `Input costs are up significantly — your margin is sensitive to supply prices. Lock weekly rates with 2+ suppliers or raise your selling price by ₹1–2/${u}.`;
     if (sim.priceFactor < 0.94)
-      return `Your business becomes more sensitive below ₹${(financials.sellingPricePerUnit * 0.93).toFixed(0)}/L. Consider direct sales or longer-term tea-stall contracts instead of matching price cuts.`;
+      return `Your business becomes more sensitive below ₹${(financials.sellingPricePerUnit * 0.93).toFixed(0)}/${u}. Protect your price with direct customer relationships instead of matching competitor cuts.`;
     if (sim.volumeFactor > 1.15)
-      return "Higher volume improves profit per litre through fixed-cost absorption — but confirm supplier capacity first before committing to buyers.";
+      return `Higher volume improves profit per ${u} through fixed-cost absorption — but confirm supplier capacity first before committing to buyers.`;
     if (sim.investmentDelta > 10000)
-      return "Extra investment raises capacity, but watch break-even timing. Only scale if you can add at least " + (Number.isFinite(simRes.breakEvenUnits - base.breakEvenUnits) ? Math.max(simRes.breakEvenUnits - base.breakEvenUnits, 0).toLocaleString("en-IN") : "some") + " L of monthly sales.";
-    return "Adjust any control to see how your business responds. Every number recalculates instantly from the deterministic engine.";
+      return "Extra investment raises capacity, but watch break-even timing. Only scale if you can add at least " + (Number.isFinite(simRes.breakEvenUnits - base.breakEvenUnits) ? Math.max(simRes.breakEvenUnits - base.breakEvenUnits, 0).toLocaleString("en-IN") : "some") + ` ${u}/month of extra sales.`;
+    return `Adjust any control to see how your business responds. Try: “${model.scenarioQuestions[0]}” — every number recalculates instantly from the deterministic engine.`;
   })();
 
   return (
@@ -227,7 +234,7 @@ export default function Finance() {
               <FlaskConical className="size-4 text-primary" /> What if…
             </h3>
             <SimulatorControl
-              label="Selling price /L"
+              label={`Selling price /${u}`}
               value={Number((financials.sellingPricePerUnit * sim.priceFactor).toFixed(1))}
               min={Math.round(financials.sellingPricePerUnit * 0.8 * 10) / 10}
               max={Math.round(financials.sellingPricePerUnit * 1.3 * 10) / 10}
@@ -236,16 +243,16 @@ export default function Finance() {
               onChange={(v) => setSim((s) => ({ ...s, priceFactor: v / financials.sellingPricePerUnit }))}
             />
             <SimulatorControl
-              label="Monthly volume (L)"
+              label={`Monthly volume (${u})`}
               value={Math.round(financials.unitsPerMonth * sim.volumeFactor)}
               min={Math.round(financials.unitsPerMonth * 0.4)}
               max={Math.round(financials.unitsPerMonth * 1.8)}
               step={50}
-              format={(v) => `${v.toLocaleString("en-IN")} L`}
+              format={(v) => `${v.toLocaleString("en-IN")} ${u}`}
               onChange={(v) => setSim((s) => ({ ...s, volumeFactor: v / financials.unitsPerMonth }))}
             />
             <SimulatorControl
-              label="Collection cost /L"
+              label={`Input cost /${u}`}
               value={Number((financials.rawMaterialPerUnit * sim.materialFactor).toFixed(1))}
               min={Math.round(financials.rawMaterialPerUnit * 0.85 * 10) / 10}
               max={Math.round(financials.rawMaterialPerUnit * 1.25 * 10) / 10}
@@ -406,7 +413,7 @@ export default function Finance() {
           </p>
         </GlassCard>
 
-        <ModelEditor financials={financials} onChange={setFinancials} />
+        <ModelEditor financials={financials} onChange={setFinancials} unit={u} />
       </div>
     </AppShell>
   );

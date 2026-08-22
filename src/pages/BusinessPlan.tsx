@@ -158,12 +158,12 @@ export default function BusinessPlan() {
   const reportSections: ReportSection[] = useMemo(() => {
     if (!profile || !fin || !blueprint) return [];
     const summaryText = pick(t.summary({
-      name: profile.name, village: profile.location.village,
+      name: profile.name, idea: profile.businessIdea, village: profile.location.village,
       startup: formatInr(fin.totalStartupCost), capital: formatInr(profile.capital),
       revenue: formatInr(fin.monthlyRevenue), be: String(fin.breakEvenMonths),
     }), lang);
     const ideaText = `${profile.businessIdea}. ${pick(t.ideaBody, lang)}`;
-    const marketText = pick(t.marketBullets(), lang).join(". ");
+    const marketText = pick(t.marketBullets({ village: profile.location.village }), lang).join(". ");
     const investmentText = blueprint.investmentBreakdown
       .map((it) => `${it.label}: ${formatInr(it.amount)}`).join(". ");
     const revenueText = `${blueprint.revenueModel}. ${pick({ en: "Monthly revenue", hi: "मासिक आय", hinglish: "Monthly revenue" }, lang)}: ${formatInr(fin.monthlyRevenue)}. ${pick({ en: "Monthly profit", hi: "मासिक लाभ", hinglish: "Monthly profit" }, lang)}: ${formatInr(fin.operatingProfit)}. ${pick({ en: "Break-even", hi: "ब्रेक-ईन", hinglish: "Break-even" }, lang)}: ${fin.breakEvenMonths} ${pick({ en: "months", hi: "माह", hinglish: "months" }, lang)}.`;
@@ -305,7 +305,7 @@ export default function BusinessPlan() {
           {/* Cover / header */}
           <header className="border-b-2 border-indigo-500/30 pb-6 text-center print-page">
             <p className="text-xs font-bold tracking-[0.3em] text-indigo-300 uppercase">{pick(t.coverLabel, lang)}</p>
-            <h1 className="mt-2 font-display text-3xl font-extrabold tracking-tight">{pick(t.title, lang)}</h1>
+            <h1 className="mt-2 font-display text-3xl font-extrabold tracking-tight">{blueprint.businessName}</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {profile.name} · {profile.location.village}, {profile.location.district}, {profile.location.state}
             </p>
@@ -316,7 +316,7 @@ export default function BusinessPlan() {
 
           <PlanSection n={1} title={sectionTitle("summary")} sectionKey="summary" activeKey={activeKey} registerRef={registerRef}>
             <p>{pick(t.summary({
-              name: profile.name, village: profile.location.village,
+              name: profile.name, idea: profile.businessIdea, village: profile.location.village,
               startup: formatInr(fin.totalStartupCost), capital: formatInr(profile.capital),
               revenue: formatInr(fin.monthlyRevenue), be: String(fin.breakEvenMonths),
             }), lang)}</p>
@@ -340,7 +340,7 @@ export default function BusinessPlan() {
 
           <PlanSection n={4} title={sectionTitle("market")} sectionKey="market" activeKey={activeKey} registerRef={registerRef}>
             <ul className="list-inside list-disc space-y-1">
-              {pick(t.marketBullets(), lang).map((b, i) => (
+              {pick(t.marketBullets({ village: profile.location.village }), lang).map((b, i) => (
                 <li key={i}>{b}</li>
               ))}
             </ul>

@@ -1,4 +1,6 @@
-import { DEMO_FINANCIALS, DEMO_PROFILE, getActionPlan } from "@/lib/data/demo";
+import { DEMO_FINANCIALS, DEMO_PROFILE } from "@/lib/data/demo";
+import { buildActionPlan } from "@/lib/intelligence/action-plan";
+import { deriveFinancialsFromIdea } from "@/lib/intelligence/business-model";
 import type { ActionItem, EntrepreneurProfile, FinancialInputs } from "@/lib/types";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
@@ -8,6 +10,8 @@ interface BusinessState {
   actionItems: ActionItem[];
   isDemo: boolean;
   hasBusiness: boolean;
+  /** Canonical entry: analyze the user's ACTUAL idea and reset all derived state atomically. */
+  startBusiness: (p: EntrepreneurProfile) => void;
   setProfile: (p: EntrepreneurProfile) => void;
   setFinancials: (f: Partial<FinancialInputs>) => void;
   toggleActionItem: (id: string) => void;
@@ -34,8 +38,12 @@ function load(): Persisted {
   } catch {
     /* corrupted storage — start fresh */
   }
-  return { profile: null, financials: DEMO_FINANCIALS, actionItems: getActionPlan("en"), isDemo: false };
+  return { profile: null, financials: NEUTRAL_FINANCIALS, actionItems: [], isDemo: false };
 }
+
+/** Placeholder model shown nowhere (pages guard on profile) — derived from a
+ *  neutral idea so no demo dairy values can ever leak into a real session. */
+const NEUTRAL_FINANCIALS = deriveFinancialsFromIdea("", 100000).financials;
 
 export function BusinessProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<Persisted>(load);
@@ -52,10 +60,23 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
   }, [state]);
 
   const setProfile = useCallback((profile: EntrepreneurProfile) => {
-    // When the profile changes (e.g. onboarding completes), refresh action
-    // items in the selected response language so every downstream screen
-    // (Plan, Business Plan) shows localized task text.
-    setState((s) => ({ ...s, profile, actionItems: getActionPlan(profile.language) }));
+    // Profile-only updates (e.g. language change from an existing session).
+    setState((s) => ({ ...s, profile }));
+  }, []);
+
+  /**
+   * THE source of truth for a new analysis. Derives the financial model from
+   * the user's actual idea text and replaces ALL derived state atomically —
+   * previous ideas can never contaminate the new analysis.
+   */
+  const startBusiness = useCallback((profile: EntrepreneurProfile) => {
+    const { financials } = deriveFinancialsFromIdea(profile.businessIdea, profile.capital);
+    setState({
+      profile,
+      financials,
+      actionItems: buildActionPlan(profile.businessIdea, profile.language ?? "en"),
+      isDemo: false,
+    });
   }, []);
 
   const setFinancials = useCallback((f: Partial<FinancialInputs>) => {
@@ -72,7 +93,8 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
   const launchDemo = useCallback(() => {
     setState((s) => {
       if (!s.isDemo) setPreDemoSnapshot(s);
-      return { profile: DEMO_PROFILE, financials: DEMO_FINANCIALS, actionItems: getActionPlan(DEMO_PROFILE.language), isDemo: true };
+      // Demo is explicitly the fictional dairy entrepreneur — labeled DEMO everywhere.
+      return { profile: DEMO_PROFILE, financials: DEMO_FINANCIALS, actionItems: buildActionPlan(DEMO_PROFILE.businessIdea, DEMO_PROFILE.language), isDemo: true };
     });
   }, []);
 
@@ -81,13 +103,13 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
   const exitDemo = useCallback(() => {
     setState((s) => {
       if (!s.isDemo) return s;
-      return preDemoSnapshot ?? { profile: null, financials: DEMO_FINANCIALS, actionItems: getActionPlan("en"), isDemo: false };
+      return preDemoSnapshot ?? { profile: null, financials: NEUTRAL_FINANCIALS, actionItems: [], isDemo: false };
     });
     setPreDemoSnapshot(null);
   }, [preDemoSnapshot]);
 
   const resetAll = useCallback(() => {
-    setState({ profile: null, financials: DEMO_FINANCIALS, actionItems: getActionPlan("en"), isDemo: false });
+    setState({ profile: null, financials: NEUTRAL_FINANCIALS, actionItems: [], isDemo: false });
   }, []);
 
   const value = useMemo<BusinessState>(
@@ -97,6 +119,7 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
       actionItems: state.actionItems,
       isDemo: state.isDemo,
       hasBusiness: !!state.profile,
+      startBusiness,
       setProfile,
       setFinancials,
       toggleActionItem,
@@ -104,7 +127,7 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
       exitDemo,
       resetAll,
     }),
-    [state, setProfile, setFinancials, toggleActionItem, launchDemo, exitDemo, resetAll],
+    [state, startBusiness, setProfile, setFinancials, toggleActionItem, launchDemo, exitDemo, resetAll],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

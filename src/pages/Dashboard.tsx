@@ -5,6 +5,7 @@ import { AppShell } from "@/components/app/AppShell";
 import { Button } from "@/components/ui/button";
 import { useBusiness } from "@/context/BusinessProvider";
 import { computeFinancials, formatInr } from "@/lib/finance/engine";
+import { detectBusinessModel } from "@/lib/intelligence/business-model";
 import { computeScores } from "@/lib/intelligence/scores";
 import { cn } from "@/lib/utils";
 import BorderGlow from "@/components/reactbits/BorderGlow";
@@ -38,6 +39,8 @@ export default function Dashboard() {
 
   const fin = computeFinancials(financials);
   const scores = computeScores(profile, financials);
+  // Scenario question derives from the user's ACTUAL business — never hardcoded.
+  const scenarioQ = detectBusinessModel(profile.businessIdea).scenarioQuestions[0];
 
   return (
     <AppShell title="Dashboard">
@@ -172,7 +175,7 @@ export default function Dashboard() {
         {/* Quick actions */}
         <div className="grid gap-4 sm:grid-cols-3">
           {[
-            { title: "Simulate a decision", desc: "\"What if milk price drops 10%?\" — see live recalculation.", to: "/finance", cta: "Open Simulator" },
+            { title: "Simulate a decision", desc: `\u201c${scenarioQ}\u201d — see live recalculation.`, to: "/finance", cta: "Open Simulator" },
             { title: "Find funding", desc: "Matched schemes with transparent eligibility criteria.", to: "/schemes", cta: "View Matches" },
             { title: "Download your plan", desc: "A professional business-plan PDF for banks and offices.", to: "/business-plan", cta: "Generate PDF" },
           ].map(({ title, desc, to, cta }) => (

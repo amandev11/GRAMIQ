@@ -7,6 +7,7 @@ import { useSpeechRecognition } from "@/hooks/use-speech";
 import type { EntrepreneurProfile } from "@/lib/types";
 
 import { computeScores } from "@/lib/intelligence/scores";
+import { deriveFinancialsFromIdea } from "@/lib/intelligence/business-model";
 import { cn } from "@/lib/utils";
 import OptionWheel from "@/components/reactbits/OptionWheel";
 import { motion, AnimatePresence } from "framer-motion";
@@ -75,7 +76,7 @@ const AI_STAGES = [
 export default function Onboarding() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { setProfile, launchDemo, financials } = useBusiness();
+  const { startBusiness, launchDemo } = useBusiness();
   const { isAuthenticated, signIn } = useAuth();
 
   // ── URL pre-fill ──
@@ -150,7 +151,7 @@ export default function Onboarding() {
         district: district.trim() || "Jaipur",
         village: village.trim() || "Bassi",
       },
-      businessIdea: idea.trim() || "Small dairy business — collect milk locally and sell to households",
+      businessIdea: idea.trim(),
       capital: Math.max(0, parseInt(capital.replace(/\D/g, "") || "0", 10)),
       existingBusiness: goal === "improve" ? "full" : "none",
       experience,
@@ -163,7 +164,10 @@ export default function Onboarding() {
   }
 
   /** Cinematic generation: meaningful stages from the AI pipeline. */
+  const canFinish = idea.trim().length >= 5;
+
   function finish() {
+    if (!canFinish) return;
     setGenerating(true);
     const p = buildProfile();
     setGenPhase(0);
@@ -173,9 +177,9 @@ export default function Onboarding() {
     AI_STAGES.forEach((_, i) => {
       setTimeout(() => setGenPhase(i + 1), stageDuration * (i + 1));
     });
-    // Save profile and navigate after last stage
+    // Analyze the ACTUAL idea and replace all derived state atomically.
     setTimeout(() => {
-      setProfile(p);
+      startBusiness(p);
       navigate("/dashboard");
     }, stageDuration * (AI_STAGES.length + 1));
   }
@@ -443,7 +447,7 @@ export default function Onboarding() {
             <div className="flex flex-col items-center text-center">
               {genPhase >= AI_STAGES.length ? (
                 <motion.div initial={{ scale: 0.7, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 200, damping: 16 }}>
-                  <ScoreRing score={computeScores(buildProfile(), financials).overall} size={120} label="Ready" />
+                  <ScoreRing score={computeScores(buildProfile(), deriveFinancialsFromIdea(idea.trim(), buildProfile().capital).financials).overall} size={120} label="Ready" />
                 </motion.div>
               ) : (
                 <motion.div
@@ -509,7 +513,7 @@ export default function Onboarding() {
                   Continue <ArrowRight className="size-4" />
                 </Button>
               ) : (
-                <Button onClick={finish} className="gap-2">
+                <Button onClick={finish} disabled={!canFinish} className="gap-2" title={canFinish ? undefined : "Describe your business idea first"}>
                   Build My Business <ArrowRight className="size-4" />
                 </Button>
               )}

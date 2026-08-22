@@ -1,8 +1,8 @@
 import { AppShell } from "@/components/app/AppShell";
 import { DataBadge, DemoBanner, GlassCard, SectionHeading } from "@/components/glass/primitives";
 import { useBusiness } from "@/context/BusinessProvider";
-import { DEMO_MARKET_POIS } from "@/lib/data/demo";
-import { computeMarketIntel } from "@/lib/intelligence/market";
+import { detectBusinessModel } from "@/lib/intelligence/business-model";
+import { computeMarketIntel, getMarketPois } from "@/lib/intelligence/market";
 import { motion } from "framer-motion";
 import {
   Compass, MapPin, Store, Truck, TriangleAlert, Zap,
@@ -26,6 +26,9 @@ export default function Market() {
   const { profile, financials, isDemo } = useBusiness();
   if (!profile) return null;
   const intel = computeMarketIntel(profile, financials);
+  // Map POI names derive from the user's ACTUAL business (positions stay DEMO DATA).
+  const pois = getMarketPois(profile.businessIdea);
+  const unitShort = detectBusinessModel(profile.businessIdea).unitShort;
 
   return (
     <AppShell title="Local Market">
@@ -48,7 +51,7 @@ export default function Market() {
                 <path d="M 0 55 Q 30 45 55 52 T 100 48" fill="none" stroke="oklch(0.6 0.03 230 / 25%)" strokeWidth="6" />
                 <path d="M 40 0 Q 45 35 52 60 T 60 100" fill="none" stroke="oklch(0.6 0.03 230 / 18%)" strokeWidth="4" />
               </svg>
-              {DEMO_MARKET_POIS.map((p, i) => {
+              {pois.map((p, i) => {
                 const meta = POI_META[p.kind];
                 const Icon = meta.icon;
                 return (
@@ -161,10 +164,10 @@ export default function Market() {
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart layout="vertical" data={intel.demandSegments} margin={{ left: 8 }}>
                     <CartesianGrid horizontal={false} strokeDasharray="3 3" stroke="oklch(0.5 0.02 230 / 15%)" />
-                    <XAxis type="number" fontSize={11} tickLine={false} axisLine={false} unit=" L" />
+                    <XAxis type="number" fontSize={11} tickLine={false} axisLine={false} unit={` ${unitShort}`} />
                     <YAxis type="category" dataKey="seg" fontSize={11} width={82} tickLine={false} axisLine={false} />
-                    <Tooltip contentStyle={tooltipStyle} formatter={(v, _n, p) => [`${v} L/day`, `(${p.payload.sharePct}% of plan)`]} />
-                    <Bar dataKey="litres" radius={[0, 8, 8, 0]} animationDuration={800}>
+                    <Tooltip contentStyle={tooltipStyle} formatter={(v, _n, p) => [`${v} ${unitShort}/day`, `(${p.payload.sharePct}% of plan)`]} />
+                    <Bar dataKey="units" radius={[0, 8, 8, 0]} animationDuration={800}>
                       {intel.demandSegments.map((_, i) => (
                         <Cell key={i} fill={["#0d9488", "#0284c7", "#16a34a"][i % 3]} />
                       ))}

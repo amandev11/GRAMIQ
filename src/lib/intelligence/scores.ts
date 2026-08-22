@@ -3,6 +3,7 @@
  * Structured outputs with provenance; the AI layer explains, never invents numbers.
  */
 import { computeFinancials, formatInr } from "@/lib/finance/engine";
+import { detectBusinessModel } from "@/lib/intelligence/business-model";
 import { L, pick, type Lang } from "@/lib/i18n/strings";
 import type { EntrepreneurProfile, FinancialInputs, FinancialResults, RiskItem, ScoreBreakdown } from "@/lib/types";
 
@@ -14,6 +15,7 @@ export function computeScores(profile: EntrepreneurProfile, f: FinancialInputs):
 } {
   const r = computeFinancials(f);
   const lang: Lang = profile.language ?? "en";
+  const unit = detectBusinessModel(profile.businessIdea).unitShort;
   const margin = r.profitMarginPct;
   const financialViability = clamp(35 + margin * 2.2 + (r.operatingProfit > 0 ? 12 : -15));
   const marketOpportunity = clamp(
@@ -44,7 +46,7 @@ export function computeScores(profile: EntrepreneurProfile, f: FinancialInputs):
         key: "market",
         label: pick(s.market.label, lang),
         score: marketOpportunity,
-        explanation: pick(s.market.explanation({ units: f.unitsPerMonth.toLocaleString("en-IN"), village: profile.location.village, district: profile.location.district }), lang),
+        explanation: pick(s.market.explanation({ units: f.unitsPerMonth.toLocaleString("en-IN"), unit, village: profile.location.village, district: profile.location.district }), lang),
         improvement: pick(s.market.improvement, lang),
       },
       {

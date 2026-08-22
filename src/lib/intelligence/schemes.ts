@@ -3,20 +3,30 @@
  * then explanation. Never claims confirmed eligibility — shows criteria.
  */
 import { DEMO_SCHEMES } from "@/lib/data/demo";
+import { detectBusinessModelKey } from "@/lib/intelligence/business-model";
 import type { EntrepreneurProfile, SchemeMatch } from "@/lib/types";
+
+/** Sector tags implied by each detected business family. */
+const MODEL_SECTORS: Record<string, string[]> = {
+  dairy: ["dairy", "animal-husbandry"],
+  livestock: ["poultry", "animal-husbandry"],
+  crops: ["agriculture", "crops"],
+  "food-service": ["food-processing", "food"],
+  retail: [],
+  services: [],
+  digital: [],
+  generic: [],
+};
 
 export function matchSchemes(profile: EntrepreneurProfile, startupCost: number): SchemeMatch[] {
   const results: SchemeMatch[] = DEMO_SCHEMES.map((scheme) => {
     const criteria: SchemeMatch["criteria"] = [];
     const missing: string[] = [];
 
-    // Sector criterion
+    // Sector criterion — matched via the DETECTED business model, not string-guessing
     if (scheme.criteria.sectors && !scheme.criteria.sectors.includes("any")) {
-      const idea = profile.businessIdea.toLowerCase();
-      const sectorHit =
-        (scheme.criteria.sectors.includes("dairy") && (idea.includes("dairy") || idea.includes("milk"))) ||
-        (scheme.criteria.sectors.includes("food-processing") && idea.includes("process")) ||
-        (scheme.criteria.sectors.includes("poultry") && idea.includes("poultry"));
+      const ideaSectors = MODEL_SECTORS[detectBusinessModelKey(profile.businessIdea)] ?? [];
+      const sectorHit = scheme.criteria.sectors.some((s) => ideaSectors.includes(s));
       criteria.push({ label: "Business Type", met: sectorHit, detail: `Idea must be in: ${scheme.criteria.sectors.join(", ")}` });
       if (!sectorHit) missing.push("Business idea does not fall under this scheme's sectors");
     }

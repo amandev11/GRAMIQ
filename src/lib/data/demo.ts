@@ -3,7 +3,7 @@
  * Schemes below are DEMO entries for prototype purposes and must never be
  * presented as real government schemes. Market points are DEMO DATA.
  */
-import type { ActionItem, DemoScheme, EntrepreneurProfile, FinancialInputs, MarketPoi } from "@/lib/types";
+import type { DemoScheme, EntrepreneurProfile, FinancialInputs, MarketPoi } from "@/lib/types";
 
 export const DEMO_PROFILE: EntrepreneurProfile = {
   name: "Ramesh Kumar",
@@ -154,6 +154,33 @@ export const DEMO_SCHEMES: DemoScheme[] = [
     },
   },
   {
+    id: "demo-agri-input-support",
+    name: "Agriculture Input & Irrigation Support",
+    type: "Subsidy",
+    sector: ["agriculture", "crops"],
+    description:
+      "DEMO scheme entry: support for seeds, drip irrigation and small farm equipment for smallholder cultivation.",
+    criteria: {
+      location: ["rural"],
+      sectors: ["agriculture", "crops"],
+      maxInvestment: 1500000,
+      entrepreneurType: ["new", "existing"],
+    },
+    documents: ["Land record / tenancy proof", "Aadhaar ID", "Bank passbook copy", "Cultivation plan"],
+    steps: [
+      "Confirm land documents are in order",
+      "Apply at the agriculture department's block-level office",
+      "Submit cultivation plan and equipment quotations",
+      "Await field verification",
+    ],
+    source: {
+      title: "Demo Scheme Database v1 (prototype knowledge base)",
+      excerpt: "…input and irrigation assistance may be extended to smallholder cultivators subject to state guidelines…",
+      lastVerified: "2026-08-05",
+      status: "DEMO DATA",
+    },
+  },
+  {
     id: "demo-poultry-insurance",
     name: "Livestock & Asset Insurance Cover",
     type: "Insurance",
@@ -223,58 +250,6 @@ export const COMPARISON_CANDIDATES: BizCandidate[] = [
   },
 ];
 
-/** Localized action plan — task text follows the user's chosen response language. */
-export function getActionPlan(lang: "en" | "hi" | "hinglish"): ActionItem[] {
-  // Importing here would create a cycle (strings → nothing → demo, but demo is
-  // imported by strings indirectly). To avoid the cycle we inline minimal copies.
-  const TASKS: Record<string, string[]> = {
-    en: [
-      "Talk to 10 households about milk price they pay today",
-      "Meet Farmer Collection Points A & B about daily supply",
-      "Price milk cans, testing kit and cooling arrangement",
-      "Finalize supplier rates and write them into your plan",
-      "Open/confirm a current account for business collections",
-      "Check eligibility for demo dairy support scheme at district office",
-      "Launch pilot route with 40 households",
-      "Track daily collections vs wastage; keep spoilage under 2%",
-      "Review actual vs planned profit with GRAMIQ copilot",
-      "Add value-added products (paneer/curd) if margin allows",
-      "Hire one delivery helper during peak months",
-      "Re-run stress test and set aside 1 month of costs as buffer",
-    ],
-    hi: [
-      "10 घरों से उनके द्वारा आज दूध मूल्य पूछें",
-      "किसान संग्रह बिंदु A और B से दैनिक आपूर्ति मिलें",
-      "दूध कैन, टेस्टिंग किट और कूलिंग व्यवस्था का मूल्य लगाएँ",
-      "आपूर्तिकर्ता दरें अंतिम करें और उन्हें अपनी योजना में लिखें",
-      "व्यापार संग्रह के लिए चालू खाता खोलें/पुष्टि करें",
-      "ज़िला कार्यालय में डेयरी सहायता योजना पात्रता जाँचें",
-      "40 घरों के साथ पायलट रूट शुरू करें",
-      "दैनिक संग्रह बनाम क्षय पर नज़र रखें; खराबी 2% से नीचे रखें",
-      "GRAMIQ कोपायलट से वास्तविक बनाम योजनित लाभ समीक्षा करें",
-      "यदि मार्जिन अनुमति दे तो मूल्य-वर्धित उत्पाद (पनीर/दही) जोड़ें",
-      "चरम माह में एक डिलीवरी सहायक रखें",
-      "तनाव परीक्षण दोबारा चलाएँ और 1 माह की लागत बफर रूप में रखें",
-    ],
-    hinglish: [
-      "10 households se unka doodh price pata karo",
-      "Farmer Collection Points A & B se daily supply ke baare mein milo",
-      "Milk cans, testing kit aur cooling arrangement price lagao",
-      "Supplier rates finalize karo aur plan mein likho",
-      "Business collections ke liye current account open/confirm karo",
-      "District office mein demo dairy support scheme eligibility check karo",
-      "40 households ke saath pilot route launch karo",
-      "Daily collections vs wastage track karo; spoilage 2% se neeche rakh lo",
-      "GRAMIQ copilot se actual vs planned profit review karo",
-      "Margin allow kare to value-added products (paneer/curd) add karo",
-      "Peak months mein ek delivery helper hire karo",
-      "Stress test re-run karo aur 1 month ki cost buffer rakh do",
-    ],
-  };
-  const tasks = TASKS[lang] ?? TASKS.en;
-  const horizons: ActionItem["horizon"][] = ["7d", "7d", "7d", "30d", "30d", "30d", "90d", "90d", "90d", "1y", "1y", "1y"];
-  return tasks.map((task, i) => ({ id: `a${i + 1}`, horizon: horizons[i], task, done: false }));
-}
-
-/** Backwards-compatible default (English). New callers should use getActionPlan(lang). */
-export const DEFAULT_ACTION_PLAN: ActionItem[] = getActionPlan("en");
+/** Localized action plans now derive from the user's actual idea — see
+ *  `src/lib/intelligence/action-plan.ts`. Demo Mode builds its dairy plan via
+ *  buildActionPlan(DEMO_PROFILE.businessIdea, lang). */
