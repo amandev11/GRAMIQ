@@ -6,7 +6,7 @@ import { computeFinancials, formatInr, project12Months } from "@/lib/finance/eng
 import { computeRisks } from "@/lib/intelligence/scores";
 import { matchSchemes } from "@/lib/intelligence/schemes";
 import { motion, useReducedMotion } from "framer-motion";
-import { CheckCircle2, Download, FileText } from "lucide-react";
+import { CheckCircle2, Download, FileText, Printer } from "lucide-react";
 import {
   Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
@@ -39,9 +39,86 @@ const ASSEMBLY_STEPS = [
   "Formatting document",
 ];
 
+/* ── Print themes ──────────────────────────────────────────────────────
+ * Each theme sets CSS custom properties consumed by the dedicated print
+ * stylesheet (see index.css @media print block). The selected theme is
+ * applied to the document root before window.print(), so the printed
+ * output genuinely changes — not just the on-screen colors.
+ */
+type PrintTheme = "red" | "black" | "white" | "blue" | "graphite";
+
+const PRINT_THEMES: Array<{ key: PrintTheme; label: string; dot: string }> = [
+  { key: "red", label: "Red", dot: "#9b1c1c" },
+  { key: "black", label: "Black", dot: "#18181b" },
+  { key: "white", label: "White", dot: "#f5f5f4" },
+  { key: "blue", label: "Blue", dot: "#1e3a8a" },
+  { key: "graphite", label: "Graphite", dot: "#44403c" },
+];
+
+function PrintThemeSelector({
+  theme,
+  onChange,
+}: {
+  theme: PrintTheme;
+  onChange: (t: PrintTheme) => void;
+}) {
+  return (
+    <div className="no-print flex flex-wrap items-center gap-3 rounded-xl border border-border/40 bg-foreground/[0.04] px-4 py-3">
+      <span className="text-[11px] font-bold tracking-widest text-muted-foreground uppercase">Print style</span>
+      <div className="flex flex-wrap gap-2">
+        {PRINT_THEMES.map(({ key, label, dot }) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => onChange(key)}
+            aria-pressed={theme === key}
+            className={cn(
+              "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all",
+              theme === key
+                ? "border-indigo-500/50 bg-indigo-500/12 text-indigo-200"
+                : "border-border/40 bg-transparent text-muted-foreground hover:border-border hover:text-foreground",
+            )}
+          >
+            <span
+              className={cn(
+                "size-2.5 rounded-full ring-1 ring-black/10",
+                dot === "#f5f5f4" && "ring-foreground/20",
+              )}
+              style={{ background: dot }}
+            />
+            {label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Accent color per print theme — applied as --print-accent on <html> before printing. */
+const PRINT_ACCENT: Record<PrintTheme, string> = {
+  red: "#9b1c1c",
+  black: "#18181b",
+  white: "#52525b",
+  blue: "#1e3a8a",
+  graphite: "#44403c",
+};
+
 export default function BusinessPlan() {
   const { profile, financials, actionItems } = useBusiness();
   const reduced = useReducedMotion();
+  const [printTheme, setPrintTheme] = useState<PrintTheme>("black");
+
+  // Print themes work by setting custom properties on the document root that
+  // the dedicated @media print stylesheet consumes — so the printed output
+  // genuinely changes per theme (headings, rules, key metrics), not just the
+  // on-screen preview.
+  const handlePrint = () => {
+    const root = document.documentElement;
+    root.style.setProperty("--print-accent", PRINT_ACCENT[printTheme]);
+    root.dataset.printTheme = printTheme;
+    // Next frame so styles apply before the print dialog snapshots the DOM.
+    requestAnimationFrame(() => window.print());
+  };
   // Assembly sequence: real compilation steps, ~1.4s, then the document reveals.
   const [step, setStep] = useState(reduced ? ASSEMBLY_STEPS.length : -1);
   useEffect(() => {
@@ -97,10 +174,17 @@ export default function BusinessPlan() {
             <h1 className="font-display text-2xl font-bold">Professional Business Plan</h1>
             <p className="text-sm text-muted-foreground">Print or save as PDF — ready for banks and district offices.</p>
           </div>
-          <Button onClick={() => window.print()} className="gap-2 rounded-full">
-            <Download className="size-4" /> Print / Save PDF
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" className="gap-2 rounded-full" onClick={handlePrint}>
+              <Printer className="size-4" /> Print
+            </Button>
+            <Button onClick={handlePrint} className="gap-2 rounded-full">
+              <Download className="size-4" /> Save as PDF
+            </Button>
+          </div>
         </div>
+
+        <PrintThemeSelector theme={printTheme} onChange={setPrintTheme} />
 
         <GlassCard className="p-6 sm:p-10">
           {/* Cover / header */}

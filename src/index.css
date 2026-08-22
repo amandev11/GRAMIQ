@@ -345,39 +345,126 @@
   }
 }
 
-/* ---------- Print styles for the Business Plan PDF ---------- */
+/* ---------- Print / Export styles for the Business Plan ----------
+ * A dedicated document layout: white A4 pages, editorial typography, and a
+ * per-document accent driven by --print-accent (set on <html> by
+ * BusinessPlan's handlePrint). The five themes (red/black/white/blue/
+ * graphite) only change this accent — headings, rules and key metrics —
+ * so every theme prints cleanly on any printer.
+ */
+@page {
+  size: A4;
+  margin: 18mm 16mm;
+}
+
 @media print {
+  html {
+    /* Fallback accent if BusinessPlan didn't set one. */
+    --print-accent: #18181b;
+  }
   body {
-    background: white !important;
+    background: #ffffff !important;
     background-image: none !important;
-    color: #1a1a1a !important;
+    color: #1c1c1e !important;
     color-scheme: light !important;
+    font-size: 11pt;
+    line-height: 1.5;
   }
-  .fx-layer {
+
+  /* Kill all app chrome, atmosphere and controls. */
+  .fx-layer,
+  .no-print,
+  nav,
+  aside,
+  header:not(.print-page),
+  [data-slot='sidebar'] {
     display: none !important;
   }
-  .no-print {
-    display: none !important;
+
+  /* Neutralize the app shell so the document fills the page. */
+  main,
+  main > div {
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
+
   .glass,
   .glass-strong {
     background: #ffffff !important;
     box-shadow: none !important;
     backdrop-filter: none !important;
-    border-color: #e2e8f0 !important;
+    border-color: #d8dde5 !important;
   }
+
+  /* Document typography on paper. */
   .print-page {
-    background: white !important;
+    background: transparent !important;
     box-shadow: none !important;
     border: none !important;
     backdrop-filter: none !important;
-    color: #1a1a1a !important;
+    break-inside: avoid-page;
+    orphans: 3;
+    widows: 3;
   }
   .print-page * {
-    color: #1a1a1a !important;
+    color: #1c1c1e !important;
   }
-  .text-gradient {
-    color: #0d9488 !important;
-    -webkit-text-fill-color: #0d9488 !important;
+  .print-page h2 {
+    font-size: 13pt !important;
+    letter-spacing: -0.01em;
+    padding-bottom: 4px;
+    border-bottom: 1.25pt solid var(--print-accent) !important;
+    margin-bottom: 8px;
+  }
+  .print-page h2 .text-indigo-300,
+  .print-page h2 span:first-child {
+    color: var(--print-accent) !important;
+  }
+  header.print-page {
+    text-align: center;
+    border-bottom: 2pt solid var(--print-accent) !important;
+  }
+  header.print-page .uppercase {
+    color: var(--print-accent) !important;
+  }
+
+  /* Key metric tiles read as a clean stat row on paper. */
+  .print-page .rounded-xl.bg-foreground\/6 {
+    background: #f6f7f9 !important;
+    border-radius: 6pt !important;
+    box-shadow: inset 0 0 0 1px #e2e6ec !important;
+    ring-width: 0;
+  }
+  .print-page .rounded-xl.bg-foreground\/6 p:last-child {
+    font-size: 12pt !important;
+    color: var(--print-accent) !important;
+  }
+
+  /* Charts: force light, ink-friendly rendering. */
+  .recharts-wrapper,
+  .recharts-surface {
+    background: #ffffff !important;
+  }
+  .recharts-cartesian-axis-tick text {
+    fill: #4b5563 !important;
+    font-size: 8pt !important;
+  }
+  .recharts-default-legend {
+    font-size: 9pt !important;
+  }
+
+  /* Tables keep their rules but lose the dark-theme borders. */
+  .print-page table th {
+    border-bottom: 1pt solid var(--print-accent) !important;
+    font-size: 8.5pt !important;
+  }
+  .print-page table tr {
+    break-inside: avoid;
+  }
+
+  a::after {
+    content: '';
   }
 }
+

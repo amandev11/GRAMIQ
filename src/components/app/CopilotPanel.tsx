@@ -19,7 +19,7 @@ const OPENING: CopilotMessage = {
 };
 
 /** Typewriter reveal for assistant answers (skipped under reduced motion). */
-function StreamedText({ text, speakLang }: { text: string; speakLang?: string }) {
+function StreamedText({ text, speakLang, autoSpeak }: { text: string; speakLang?: string; autoSpeak?: boolean }) {
   const reduced = useReducedMotion();
   const [len, setLen] = useState(reduced ? text.length : 0);
   const done = len >= text.length;
@@ -44,12 +44,12 @@ function StreamedText({ text, speakLang }: { text: string; speakLang?: string })
         {text.slice(0, len)}
         {!done && <span className="ml-0.5 inline-block h-3.5 w-[2px] animate-pulse bg-primary align-middle" />}
       </span>
-      {done && speakLang && <SpeakButton text={text} lang={speakLang} />}
+      {done && speakLang && <SpeakButton text={text} lang={speakLang} autoSpeak={autoSpeak} />}
     </>
   );
 }
 
-function SpeakButton({ text, lang }: { text: string; lang: string }) {
+function SpeakButton({ text, lang, autoSpeak }: { text: string; lang: string; autoSpeak?: boolean }) {
   const [speaking, setSpeaking] = useState(false);
   function toggle() {
     if (!("speechSynthesis" in window)) return;
@@ -58,6 +58,11 @@ function SpeakButton({ text, lang }: { text: string; lang: string }) {
       setSpeaking(false);
       return;
     }
+    speakNow();
+  }
+
+  function speakNow() {
+    if (!("speechSynthesis" in window)) return;
     // Strip bullet/number prefixes for cleaner speech
     const clean = text.replace(/^[•\-\d.\s]+/gm, "");
     const u = new SpeechSynthesisUtterance(clean);
@@ -68,6 +73,17 @@ function SpeakButton({ text, lang }: { text: string; lang: string }) {
     window.speechSynthesis.speak(u);
     setSpeaking(true);
   }
+
+  // If the user enabled voice responses in onboarding, auto-speak new answers.
+  const spokeRef = useRef("");
+  useEffect(() => {
+    if (autoSpeak && text && spokeRef.current !== text && "speechSynthesis" in window) {
+      spokeRef.current = text;
+      requestAnimationFrame(() => speakNow());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [text, autoSpeak]);
+
   useEffect(() => () => window.speechSynthesis?.cancel(), []);
   return (
     <button
@@ -240,7 +256,7 @@ export function CopilotPanel({
                       {m.calcSteps && <CalculationSteps steps={m.calcSteps} />}
                     </>
                   )}
-                  {m.role === "user" ? m.text : <StreamedText text={m.text} speakLang={speakLang} />}
+                  {m.role === "user" ? m.text : <StreamedText text={m.text} speakLang={speakLang} autoSpeak={profile?.voiceResponses ?? false} />}
                   {m.role === "assistant" && m.source && (
                     <span
                       className={cn(

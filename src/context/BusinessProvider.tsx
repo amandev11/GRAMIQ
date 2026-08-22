@@ -12,6 +12,7 @@ interface BusinessState {
   setFinancials: (f: Partial<FinancialInputs>) => void;
   toggleActionItem: (id: string) => void;
   launchDemo: () => void;
+  exitDemo: () => void;
   resetAll: () => void;
 }
 
@@ -38,6 +39,9 @@ function load(): Persisted {
 
 export function BusinessProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<Persisted>(load);
+  // Snapshot of the user's real session taken before Demo Mode launched, so
+  // exiting restores it instead of wiping their work.
+  const [preDemoSnapshot, setPreDemoSnapshot] = useState<Persisted | null>(null);
 
   useEffect(() => {
     try {
@@ -63,8 +67,21 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const launchDemo = useCallback(() => {
-    setState({ profile: DEMO_PROFILE, financials: DEMO_FINANCIALS, actionItems: DEFAULT_ACTION_PLAN, isDemo: true });
+    setState((s) => {
+      if (!s.isDemo) setPreDemoSnapshot(s);
+      return { profile: DEMO_PROFILE, financials: DEMO_FINANCIALS, actionItems: DEFAULT_ACTION_PLAN, isDemo: true };
+    });
   }, []);
+
+  // Exit Demo Mode and restore whatever the user had before entering it.
+  // If there was nothing before (fresh visit), return to the clean state.
+  const exitDemo = useCallback(() => {
+    setState((s) => {
+      if (!s.isDemo) return s;
+      return preDemoSnapshot ?? { profile: null, financials: DEMO_FINANCIALS, actionItems: DEFAULT_ACTION_PLAN, isDemo: false };
+    });
+    setPreDemoSnapshot(null);
+  }, [preDemoSnapshot]);
 
   const resetAll = useCallback(() => {
     setState({ profile: null, financials: DEMO_FINANCIALS, actionItems: DEFAULT_ACTION_PLAN, isDemo: false });
@@ -81,9 +98,10 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
       setFinancials,
       toggleActionItem,
       launchDemo,
+      exitDemo,
       resetAll,
     }),
-    [state, setProfile, setFinancials, toggleActionItem, launchDemo, resetAll],
+    [state, setProfile, setFinancials, toggleActionItem, launchDemo, exitDemo, resetAll],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

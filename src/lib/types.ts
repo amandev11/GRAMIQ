@@ -13,7 +13,10 @@ export interface EntrepreneurProfile {
   resources: string[];
   goal: "new-business" | "improve" | "funding" | "finances" | "compare" | "schemes";
   timelineMonths: number;
+  /** Language GRAMIQ uses to respond (not the user's input language). */
   language: "hi" | "en" | "hinglish";
+  /** Whether GRAMIQ should also speak its responses aloud (TTS output). */
+  voiceResponses?: boolean;
 }
 
 export interface FinancialInputs {

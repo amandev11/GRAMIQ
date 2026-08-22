@@ -1,10 +1,10 @@
 import { useBusiness } from "@/context/BusinessProvider";
 import { cn } from "@/lib/utils";
 import {
-  Bot, Building2, FileText, LayoutDashboard, LineChart, MapPinned, Menu, Ribbon,
+  Bot, Building2, FileText, LayoutDashboard, LineChart, LogOut, MapPinned, Menu, Ribbon,
   Scale, ShieldAlert, ShieldCheck, Sparkles, Target, X,
 } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Navigate, NavLink, useLocation, useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
 import { CopilotPanel } from "./CopilotPanel";
@@ -72,10 +72,24 @@ function JourneyRail() {
 }
 
 export function AppShell({ children, title }: { children: ReactNode; title?: string }) {
-  const { profile, hasBusiness, isDemo } = useBusiness();
+  const { profile, hasBusiness, isDemo, exitDemo } = useBusiness();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [copilotOpen, setCopilotOpen] = useState(false);
+
+  // Demo Mode is never a trap: Esc exits it. Other screens leave Esc alone so
+  // it can't destroy unsaved user data.
+  useEffect(() => {
+    if (!isDemo) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        exitDemo();
+        navigate("/dashboard", { replace: true });
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isDemo, exitDemo, navigate]);
 
   if (!hasBusiness) {
     return <Navigate to="/onboarding" replace />;
@@ -131,6 +145,20 @@ export function AppShell({ children, title }: { children: ReactNode; title?: str
             <span className="hidden rounded-full border border-amber-500/40 bg-amber-400/15 px-2.5 py-1 text-[10px] font-bold tracking-widest text-amber-300 uppercase sm:inline-flex">
               Demo Mode
             </span>
+          )}
+          {isDemo && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 rounded-full border-amber-500/40 text-amber-300 hover:bg-amber-400/10 hover:text-amber-200"
+              onClick={() => {
+                exitDemo();
+                navigate("/dashboard", { replace: true });
+              }}
+            >
+              <LogOut className="size-3.5" />
+              Exit Demo
+            </Button>
           )}
           <Button
             size="sm"

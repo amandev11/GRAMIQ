@@ -12,9 +12,9 @@ import OptionWheel from "@/components/reactbits/OptionWheel";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, ArrowRight, BadgeIndianRupee, Building2, CheckCircle2, Coins,
-  Lightbulb, MapPin, Mic, MicOff, Sparkles, Target, UserRound,
+  MapPin, Mic, MicOff, Sparkles, Target, UserRound, Volume2, VolumeX,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 
 /* ── Quick-start options ── */
@@ -110,6 +110,26 @@ export default function Onboarding() {
   const [langIdx, setLangIdx] = useState(initialLangIdx);
   const language = langToCode(langIdx);
 
+  // ── Voice response preference: should GRAMIQ speak its responses aloud?
+  // This is a TTS OUTPUT preference — NOT microphone input. No mic permission
+  // is requested here; it only gates the existing SpeakButton in the copilot.
+  const [voiceResponses, setVoiceResponses] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem("gramiq-voice-responses") === "on";
+    } catch {
+      return false;
+    }
+  });
+
+  // Persist the preference so CopilotPanel can read it.
+  useEffect(() => {
+    try {
+      localStorage.setItem("gramiq-voice-responses", voiceResponses ? "on" : "off");
+    } catch {
+      /* storage unavailable — preference stays session-only */
+    }
+  }, [voiceResponses]);
+
   // ── Speech ──
   const { micState, start, stop } = useSpeechRecognition((transcript) => {
     setIdea((prev) => (prev ? `${prev} ${transcript}` : transcript));
@@ -138,6 +158,7 @@ export default function Onboarding() {
       goal: GOAL_MAP[goal],
       timelineMonths: 6,
       language,
+      voiceResponses,
     };
   }
 
@@ -300,26 +321,89 @@ export default function Onboarding() {
       </div>
     </div>,
 
-    // Step 3: Language + generate
+    // Step 3: How should GRAMIQ communicate?
+    // Three decisions, nothing else: language, response style, voice output.
     <div key="s3" className="space-y-5">
-      <h2 className="font-display text-2xl font-bold sm:text-3xl">How should GRAMIQ talk to you?</h2>
+      <h2 className="font-display text-2xl font-bold sm:text-3xl">How should GRAMIQ respond to you?</h2>
+
+      {/* Language wheel — AI response language. Loops infinitely; English centered by default. */}
       <GlassCard className="flex flex-col items-center bg-foreground/4 p-4">
-        <OptionWheel
-          items={LANG_LABELS}
-          defaultSelected={1}
-          onChange={(i) => setLangIdx(i)}
-          textColor="#64748b"
-          activeColor="#818cf8"
-          fontSize={1.2}
-        />
-        <p className="mt-1 text-xs text-muted-foreground">Scroll or drag to choose your language</p>
+        <div className="relative flex h-44 w-full items-center justify-center">
+          {/* Center emphasis guides */}
+          <span aria-hidden className="pointer-events-none absolute left-1/2 top-1/2 h-px w-full -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-transparent via-indigo-500/25 to-transparent" />
+          <OptionWheel
+            items={LANG_LABELS}
+            defaultSelected={1} // English centered by default
+            onChange={(i) => setLangIdx(i)}
+            textColor="#64748b"
+            activeColor="#a5b4fc"
+            fontSize={1.15}
+            spacing={1.5}
+            curve={0.8}
+            tilt={7}
+            blur={1.4}
+            fade={0.32}
+            minOpacity={0.12}
+            loop // infinite looping — Hindi above English, Hinglish below, wrapping seamlessly
+          />
+        </div>
+        <p className="mt-2 text-xs text-muted-foreground">Choose the language you'd like GRAMIQ to speak in.</p>
       </GlassCard>
-      <GlassCard className="flex items-start gap-3 bg-foreground/4 p-4">
-        <Lightbulb className="mt-0.5 size-5 shrink-0 text-amber-400" />
-        <p className="text-sm leading-relaxed text-muted-foreground">
-          Responses and voice input adapt to your language. You can change this anytime.
-        </p>
+
+      {/* Voice responses toggle — TTS OUTPUT preference, NOT microphone input.
+          No mic permission is requested here. */}
+      <GlassCard className={cn(
+        "flex items-center justify-between bg-foreground/4 p-4 transition-colors",
+        voiceResponses && "ring-1 ring-indigo-500/30",
+      )}>
+        <div className="flex items-start gap-3">
+          <span className={cn(
+            "flex size-10 shrink-0 items-center justify-center rounded-xl transition-colors",
+            voiceResponses ? "bg-indigo-500/15 text-indigo-300 ring-1 ring-indigo-500/25" : "bg-foreground/6 text-muted-foreground",
+          )}>
+            {voiceResponses ? <Volume2 className="size-5" /> : <VolumeX className="size-5" />}
+          </span>
+          <div>
+            <p className="text-sm font-semibold">Let GRAMIQ speak</p>
+            <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+              {voiceResponses
+                ? "Responses are also read aloud where your browser supports it."
+                : "Responses stay text-only. You can enable audio replies anytime."}
+            </p>
+          </div>
+        </div>
+
+        {/* Toggle switch */}
+        <button
+          type="button"
+          role="switch"
+          aria-checked={voiceResponses}
+          aria-label="Voice responses"
+          onClick={() => setVoiceResponses((v) => !v)}
+          className={cn(
+            "relative h-7 w-12 shrink-0 rounded-full transition-colors duration-200",
+            voiceResponses ? "bg-indigo-500" : "bg-foreground/15",
+          )}
+        >
+          <motion.span
+            layout
+            transition={{ type: "spring", stiffness: 500, damping: 32 }}
+            className={cn(
+              "absolute top-1 size-5 rounded-full bg-white shadow-md",
+              voiceResponses ? "right-1" : "left-1",
+            )}
+          />
+        </button>
       </GlassCard>
+
+      {/* Dynamic reflection of current choice — shows the selection is live */}
+      <p className="text-center text-xs text-muted-foreground">
+        GRAMIQ will respond in{" "}
+        <strong className="font-semibold text-indigo-300">
+          {language === "hi" ? "हिन्दी (Hindi)" : language === "hinglish" ? "Hinglish" : "English"}
+        </strong>
+        {voiceResponses && <> with spoken replies</>}.
+      </p>
     </div>,
   ];
 
