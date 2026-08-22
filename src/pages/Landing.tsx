@@ -11,8 +11,7 @@ import { Button } from "@/components/ui/button";
 import Aurora from "@/components/reactbits/Aurora";
 import SpecularButton from "@/components/reactbits/SpecularButton";
 import OptionWheel from "@/components/reactbits/OptionWheel";
-import AccordionGallery from "@/components/reactbits/AccordionGallery";
-import { artTile } from "@/lib/data/art";
+import JourneySection from "@/components/app/JourneySection";
 import { cn } from "@/lib/utils";
 
 /* ── Data ── */
@@ -26,29 +25,6 @@ const EXAMPLES = [
   "Begin poultry farming — broiler unit",
   "Start a mobile repair shop in my village",
   "Explore food processing — paneer and ghee",
-];
-
-const HOW_IT_WORKS = [
-  {
-    label: "Idea",
-    image: artTile({ from: "#4f46e5", to: "#1e1b4b", glyph: "✦", label: "IDEA", sub: "type or speak" }),
-  },
-  {
-    label: "Understand",
-    image: artTile({ from: "#3b82f6", to: "#172554", glyph: "◎", label: "AI READS", sub: "your situation" }),
-  },
-  {
-    label: "Analyze",
-    image: artTile({ from: "#6366f1", to: "#1e1b4b", glyph: "▦", label: "INTELLIGENCE", sub: "market · risk · finance" }),
-  },
-  {
-    label: "Simulate",
-    image: artTile({ from: "#8b5cf6", to: "#4c1d95", glyph: "≋", label: "SIMULATE", sub: "live what-if" }),
-  },
-  {
-    label: "Act",
-    image: artTile({ from: "#22d3ee", to: "#0e7490", glyph: "➤", label: "PLAN", sub: "12-month roadmap" }),
-  },
 ];
 
 /* ── Micro-language labels for the wheel ── */
@@ -217,6 +193,7 @@ export default function Landing() {
             <div className="relative px-4 pt-3 pb-2">
               <textarea
                 ref={inputRef}
+                id="idea-console"
                 value={idea}
                 onChange={(e) => setIdea(e.target.value)}
                 onFocus={() => setFocused(true)}
@@ -342,24 +319,8 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── How GRAMIQ works ── */}
-      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-8">
-        <div className="mb-6 text-center">
-          <h2 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">From idea to business plan</h2>
-          <p className="mt-2 text-sm text-muted-foreground">One input. Five stages. A complete business intelligence system.</p>
-        </div>
-        <AccordionGallery
-          items={HOW_IT_WORKS}
-          defaultIndex={2}
-          height={320}
-          radius={14}
-          expandRatio={0.48}
-          accentColor="#818cf8"
-          overlayColor="#0f172a"
-          textColor="#e0e7ff"
-          trigger="hover"
-        />
-      </section>
+      {/* ── How GRAMIQ works — one coherent visual journey ── */}
+      <JourneySection />
 
       {/* ── Provenance ── */}
       <section className="mx-auto max-w-3xl px-4 py-12 sm:px-8">
@@ -393,16 +354,27 @@ export default function Landing() {
       </section>
 
       {/* ── Final CTA ── */}
-      <section className="px-4 pb-20 text-center sm:px-8">
-        <p className="font-display text-xl font-bold sm:text-2xl">Your AI Business Copilot for Rural India.</p>
-        <div className="mt-5">
-          <Button
-            size="lg"
-            className="gap-2 rounded-full bg-indigo-500 px-6 text-white shadow-lg shadow-indigo-500/25 transition-all hover:brightness-110"
-            onClick={() => navigate("/onboarding")}
-          >
-            Build My Business <ArrowRight className="size-4" />
-          </Button>
+      <section className="relative px-4 pt-4 pb-24 text-center sm:px-8">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-72"
+          style={{ background: "radial-gradient(ellipse 50% 60% at 50% 100%, oklch(0.45 0.12 275 / 9%), transparent 70%)" }}
+        />
+        <div className="relative">
+          <p className="text-[11px] font-bold tracking-[0.3em] text-indigo-400 uppercase">Gramiq · Start</p>
+          <h2 className="mt-5 font-display text-3xl leading-tight tracking-tight sm:text-5xl">
+            <span className="text-muted-foreground/70">Your AI copilot for</span>{" "}
+            <span className="text-gradient font-extrabold">rural India.</span>
+          </h2>
+          <div className="mt-8">
+            <Button
+              size="lg"
+              className="gap-2 rounded-full bg-indigo-500 px-7 text-white shadow-lg shadow-indigo-500/25 transition-all hover:brightness-110"
+              onClick={() => navigate("/onboarding")}
+            >
+              Build My Business <ArrowRight className="size-4" />
+            </Button>
+          </div>
         </div>
       </section>
 
