@@ -10,10 +10,12 @@ import { useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
 
 export default function Compare() {
-  const { profile, isDemo } = useBusiness();
+  const { profile, financials, isDemo } = useBusiness();
   const navigate = useNavigate();
   if (!profile) return null;
-  const cmp = compareBusinesses();
+  // Candidates are three strategies over the USER'S OWN business — derived
+  // from the actual idea + current financial inputs, never a fixed catalog.
+  const cmp = compareBusinesses(profile.businessIdea, financials, profile.capital);
   const best = cmp.candidates[cmp.recommendationIndex];
 
   // Decision trace: where does the winner beat the runner-up, by how much?
@@ -36,8 +38,8 @@ export default function Compare() {
       <div className="space-y-6">
         <SectionHeading
           title="Business Comparison Engine"
-          desc="Three ventures scored on your actual profile. Every factor and weight is visible — nothing hidden inside a black box."
-          badge={<><DemoBanner isDemo={isDemo} /><DataBadge source="AI ESTIMATE" /></>}
+          desc={`Three ways to run YOUR business — lean start, your plan, and scale-up — scored on your actual inputs. Every figure is computed from your idea, never a fixed template.`}
+          badge={<><DemoBanner isDemo={isDemo} /><DataBadge source="CALCULATED" /></>}
         />
 
         {/* Recommendation */}
@@ -112,7 +114,7 @@ export default function Compare() {
                   {[
                     ["Startup", formatInr(c.startupCost, true)],
                     ["Profit/mo", formatInr(c.monthlyProfit, true)],
-                    ["Break-even", `${c.breakEvenMonths} mo`],
+                    ["Break-even", `${c.breakEvenMonths >= 36 ? "36+" : c.breakEvenMonths} mo`],
                     ["Skill", c.skillRequirement],
                   ].map(([k, v]) => (
                     <div key={k} className="rounded-lg bg-foreground/6 px-2.5 py-2 ring-1 ring-white/5">
@@ -134,9 +136,9 @@ export default function Compare() {
               <h3 className="flex items-center gap-2 font-display text-lg font-bold">
                 <Scale className="size-4 text-primary" /> Scoring matrix
               </h3>
-              <p className="text-xs text-muted-foreground">Each factor normalized 0–100 across the three candidates, then averaged equally.</p>
+              <p className="text-xs text-muted-foreground">Each factor normalized 0–100 across the three strategies, then averaged equally.</p>
             </div>
-            <DataBadge source="AI ESTIMATE" />
+            <DataBadge source="CALCULATED" />
           </div>
 
           <div className="mt-4 overflow-x-auto">
@@ -194,9 +196,9 @@ export default function Compare() {
           <div className="mt-4 flex gap-3 rounded-xl bg-amber-400/10 p-4 ring-1 ring-amber-500/25">
             <Info className="mt-0.5 size-4 shrink-0 text-amber-600" />
             <p className="text-xs leading-relaxed text-muted-foreground">
-              <strong className="text-amber-700">Modeled assumptions, not market facts:</strong> candidate
-              financials are illustrative models for comparison. GRAMIQ never presents modeled numbers as
-              verified market data — verify with local suppliers and buyers before committing capital.
+              <strong className="text-amber-700">Modeled strategies, not market facts:</strong> each variant
+              (lean / your plan / scale-up) is computed from your own inputs through GRAMIQ's formula engine.
+              Verify prices, yields and loan terms with local suppliers, buyers and your bank before committing capital.
             </p>
           </div>
         </GlassCard>

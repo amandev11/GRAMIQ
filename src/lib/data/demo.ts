@@ -213,43 +213,12 @@ export const DEMO_MARKET_POIS: MarketPoi[] = [
   { id: "o1", kind: "opportunity", name: "Highway Tea-stall Belt", x: 22, y: 44, distanceKm: 7, note: "12 tea stalls, no formal milk contract" },
 ];
 
-/** Business idea catalog used by the Comparison Engine (modeled assumptions). */
-export interface BizCandidate {
-  key: string;
-  name: string;
-  startupCost: number;
-  monthlyRevenue: number;
-  monthlyProfit: number;
-  breakEvenMonths: number;
-  risk: number; // 1-10 modeled
-  demand: number;
-  competition: number; // higher = more crowded
-  capitalEfficiency: number; // profit per lakh invested (modeled)
-  skillRequirement: "Low" | "Medium" | "Moderate-High";
-  why: string;
-}
-
-export const COMPARISON_CANDIDATES: BizCandidate[] = [
-  {
-    key: "dairy", name: "Dairy (Collection + Sale)", startupCost: 55000, monthlyRevenue: 207000,
-    monthlyProfit: 14200, breakEvenMonths: 6.4, risk: 4, demand: 9, competition: 5,
-    capitalEfficiency: 142000 / 100000, skillRequirement: "Low",
-    why: "Daily cash flow, steady household demand, uses existing family labor.",
-  },
-  {
-    key: "poultry", name: "Poultry (Broiler Unit)", startupCost: 90000, monthlyRevenue: 168000,
-    monthlyProfit: 11000, breakEvenMonths: 11, risk: 7, demand: 8, competition: 6,
-    capitalEfficiency: 110000 / 100000, skillRequirement: "Medium",
-    why: "Fast production cycles but exposed to feed prices and disease risk.",
-  },
-  {
-    key: "food", name: "Small Food Processing", startupCost: 160000, monthlyRevenue: 240000,
-    monthlyProfit: 18500, breakEvenMonths: 14, risk: 5, demand: 8, competition: 4,
-    capitalEfficiency: 185000 / 100000, skillRequirement: "Moderate-High",
-    why: "Higher margins and value addition, but needs more capital and licensing.",
-  },
-];
-
 /** Localized action plans now derive from the user's actual idea — see
  *  `src/lib/intelligence/action-plan.ts`. Demo Mode builds its dairy plan via
- *  buildActionPlan(DEMO_PROFILE.businessIdea, lang). */
+ *  buildActionPlan(DEMO_PROFILE.businessIdea, lang).
+ *
+ *  Comparison-engine candidates also derive from the user's actual idea +
+ *  financial inputs — see `compareBusinesses()` in
+ *  `src/lib/intelligence/blueprint.ts`. There is intentionally NO fixed
+ *  candidate catalog: every user's comparison is computed from their own
+ *  numbers. */

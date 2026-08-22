@@ -97,7 +97,7 @@ export default function JudgesMode() {
   const { profile, financials } = useBusiness();
   const [step, setStep] = useState(0);
   const [autoplay, setAutoplay] = useState(false);
-  const comparison = profile ? compareBusinesses() : null;
+  const comparison = profile ? compareBusinesses(profile.businessIdea, financials, profile.capital) : null;
   // Simulator step title uses a scenario from the user's ACTUAL business.
   const simTitle = `\u201c${profile ? detectBusinessModel(profile.businessIdea).scenarioQuestions[0] : "What if prices fall?"}\u201d`;
 
